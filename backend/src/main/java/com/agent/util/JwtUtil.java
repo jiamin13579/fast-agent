@@ -12,7 +12,8 @@ import java.util.Date;
 @Component
 public class JwtUtil {
 
-    @Value("${agent.jwt.secret:super-secret-key-for-jwt-tokens-2024}")
+    // JWT secret must be configured via environment variable or in application.yml (agent.jwt.secret)
+    @Value("${agent.jwt.secret}")
     private String secret;
 
     @Value("${agent.jwt.expiration:604800000}") // 7 days in ms
