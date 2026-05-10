@@ -32,7 +32,7 @@ public class AuthService {
             throw new RuntimeException("邮箱或密码错误");
         }
 
-        if (user.getStatus() != null && user.getStatus() == 0) {
+        if (user.getStatus() == null || user.getStatus() == 0) {
             throw new RuntimeException("账号已被禁用");
         }
 
