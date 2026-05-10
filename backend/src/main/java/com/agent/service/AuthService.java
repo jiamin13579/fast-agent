@@ -1,0 +1,67 @@
+package com.agent.service;
+
+import com.agent.entity.User;
+import com.agent.repository.UserRepository;
+import com.agent.util.JwtUtil;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+
+import java.util.HashMap;
+import java.util.Map;
+
+@Service
+public class AuthService {
+
+    @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
+    @Autowired
+    private JwtUtil jwtUtil;
+
+    public Map<String, Object> login(String email, String password) {
+        User user = userRepository.selectOne(
+            new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<User>()
+                .eq(User::getEmail, email)
+        );
+
+        if (user == null || !passwordEncoder.matches(password, user.getPassword())) {
+            throw new RuntimeException("邮箱或密码错误");
+        }
+
+        if (user.getStatus() == 0) {
+            throw new RuntimeException("账号已被禁用");
+        }
+
+        String token = jwtUtil.generateToken(user.getId(), user.getEmail(), user.getRole().name());
+
+        Map<String, Object> result = new HashMap<>();
+        result.put("token", token);
+        result.put("user", Map.of(
+            "id", user.getId(),
+            "email", user.getEmail(),
+            "nickname", user.getNickname(),
+            "role", user.getRole().name(),
+            "mustChangePassword", user.getMustChangePassword()
+        ));
+
+        return result;
+    }
+
+    public User getCurrentUser(String token) {
+        if (token == null || !token.startsWith("Bearer ")) {
+            throw new RuntimeException("未登录");
+        }
+
+        String jwt = token.substring(7);
+        if (!jwtUtil.validateToken(jwt)) {
+            throw new RuntimeException("token 已过期");
+        }
+
+        Long userId = Long.parseLong(jwtUtil.parseToken(jwt).getSubject());
+        return userRepository.selectById(userId);
+    }
+}
