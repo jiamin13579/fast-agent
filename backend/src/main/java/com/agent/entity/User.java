@@ -16,7 +16,12 @@ public class User {
     private String password;
     private Role role;
     private Integer status; // 1=ENABLED, 0=DISABLED
+    @TableField("must_change_password")
     private Boolean mustChangePassword;
+
+    @TableField("create_time")
     private LocalDateTime createTime;
+
+    @TableField("update_time")
     private LocalDateTime updateTime;
 }
