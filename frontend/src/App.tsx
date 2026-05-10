@@ -4,10 +4,16 @@ import SkillManage from './pages/SkillManage';
 import McpManage from './pages/McpManage';
 import TaskManage from './pages/TaskManage';
 import KnowledgeManage from './pages/KnowledgeManage';
+import Login from './pages/Login';
 import { Layout, Menu } from 'antd';
 import { MessageOutlined, ToolOutlined, CloudOutlined, ClockCircleOutlined, BookOutlined } from '@ant-design/icons';
+import { getToken } from './lib/auth';
 
 const { Header, Sider, Content } = Layout;
+
+function PrivateRoute({ children }: { children: React.ReactNode }) {
+  return getToken() ? children : <Navigate to="/login" replace />;
+}
 
 export default function App() {
   return (
@@ -25,11 +31,12 @@ export default function App() {
         <Layout>
           <Content style={{ padding: 24 }}>
             <Routes>
-              <Route path="/" element={<Chat />} />
-              <Route path="/skills" element={<SkillManage />} />
-              <Route path="/mcp" element={<McpManage />} />
-              <Route path="/tasks" element={<TaskManage />} />
-              <Route path="/knowledge" element={<KnowledgeManage />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/" element={<PrivateRoute><Chat /></PrivateRoute>} />
+              <Route path="/skills" element={<PrivateRoute><SkillManage /></PrivateRoute>} />
+              <Route path="/mcp" element={<PrivateRoute><McpManage /></PrivateRoute>} />
+              <Route path="/tasks" element={<PrivateRoute><TaskManage /></PrivateRoute>} />
+              <Route path="/knowledge" element={<PrivateRoute><KnowledgeManage /></PrivateRoute>} />
             </Routes>
           </Content>
         </Layout>
