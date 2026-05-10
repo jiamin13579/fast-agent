@@ -3,13 +3,18 @@ package com.agent.init;
 import com.agent.entity.Role;
 import com.agent.entity.User;
 import com.agent.repository.UserRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 @Component
 public class DataInitializer implements CommandLineRunner {
+
+    private static final Logger log = LoggerFactory.getLogger(DataInitializer.class);
 
     @Autowired
     private UserRepository userRepository;
@@ -18,8 +23,9 @@ public class DataInitializer implements CommandLineRunner {
     private PasswordEncoder passwordEncoder;
 
     @Override
+    @Transactional
     public void run(String... args) {
-        if (userRepository.selectCount(null) > 0) {
+        if (userRepository.selectCount(new com.baomidou.mybatisplus.core.conditions.query.QueryWrapper<>()) > 0) {
             return; // 已有数据，跳过
         }
 
@@ -41,7 +47,7 @@ public class DataInitializer implements CommandLineRunner {
             userRepository.insert(user);
         }
 
-        System.out.println("Initialized " + users.length + " default users");
+        log.info("Initialized {} default users", users.length);
     }
 
     private User createUser(String email, String nickname, Role role) {
