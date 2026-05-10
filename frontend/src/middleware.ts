@@ -1,9 +1,8 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { getToken } from "@/lib/auth";
 
 export function middleware(request: NextRequest) {
-  const token = getToken();
+  const token = request.cookies.get("auth_token")?.value;
   const isLoginPage = request.nextUrl.pathname === "/login";
 
   if (!token && !isLoginPage) {

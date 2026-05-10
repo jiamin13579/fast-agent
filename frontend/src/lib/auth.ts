@@ -27,6 +27,7 @@ export function getUser(): User | null {
 export function clearAuth() {
   localStorage.removeItem(TOKEN_KEY);
   localStorage.removeItem(USER_KEY);
+  document.cookie = "auth_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
 }
 
 export async function login(email: string, password: string): Promise<User> {
@@ -44,6 +45,7 @@ export async function login(email: string, password: string): Promise<User> {
   const data = await res.json();
   setToken(data.token);
   setUser(data.user);
+  document.cookie = `auth_token=${data.token}; path=/`;
   return data.user;
 }
 
@@ -58,7 +60,9 @@ export async function getCurrentUser(): Promise<User> {
     throw new Error("未登录");
   }
 
-  return res.json();
+  const user = await res.json();
+  setUser(user);
+  return user;
 }
 
 function setUser(user: User) {
