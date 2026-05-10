@@ -7,7 +7,7 @@ import java.lang.reflect.Method;
 @Component
 public class ToolRegistry {
     private final Map<String, ToolDefinition> tools = new HashMap<>();
-    private final Map<String, Object> toolInstances = new HashMap<>();
+    private final Map<String, ToolMethod> toolInstances = new HashMap<>();
 
     public void register(ToolDefinition tool, Object instance, Method method) {
         tools.put(tool.getName(), tool);

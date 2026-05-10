@@ -14,6 +14,9 @@ public class Task {
     private String status;
     private String result;
     private String error;
+    private Long skillId;
+    private String params;
+    private String errorMsg;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

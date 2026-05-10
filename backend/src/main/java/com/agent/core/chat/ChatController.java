@@ -38,8 +38,17 @@ public class ChatController {
 
         String response = llmAgent.process(content, history);
 
-        messageMapper.insert(new Message(null, chatId, "user", content));
-        messageMapper.insert(new Message(null, chatId, "assistant", response));
+        Message userMsg = new Message();
+        userMsg.setChatId(chatId);
+        userMsg.setRole("user");
+        userMsg.setContent(content);
+        messageMapper.insert(userMsg);
+
+        Message assistantMsg = new Message();
+        assistantMsg.setChatId(chatId);
+        assistantMsg.setRole("assistant");
+        assistantMsg.setContent(response);
+        messageMapper.insert(assistantMsg);
 
         return Map.of("response", response);
     }

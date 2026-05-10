@@ -9,6 +9,7 @@ import java.time.LocalDateTime;
 public class Log {
     @TableId(type = IdType.AUTO)
     private Long id;
+    private Long taskId;
     private String level;
     private String message;
     private String source;

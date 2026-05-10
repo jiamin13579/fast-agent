@@ -15,6 +15,9 @@ public class ScheduledTask {
     private String webhookUrl;
     private Boolean enabled;
     private Boolean durable;
+    private Long skillId;
+    private String params;
+    private java.sql.Timestamp lastRun;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }
