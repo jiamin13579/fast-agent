@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useApp } from "@/components/layout";
+import { getToken } from "@/lib/auth";
 import { cn } from "@/lib/utils";
 import {
   Send,

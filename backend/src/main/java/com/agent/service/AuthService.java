@@ -23,10 +23,7 @@ public class AuthService {
     private JwtUtil jwtUtil;
 
     public Map<String, Object> login(String email, String password) {
-        User user = userRepository.selectOne(
-            new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<User>()
-                .eq(User::getEmail, email)
-        );
+        User user = userRepository.findByEmail(email).orElse(null);
 
         if (user == null || !passwordEncoder.matches(password, user.getPassword())) {
             throw new RuntimeException("邮箱或密码错误");
@@ -62,6 +59,6 @@ public class AuthService {
         }
 
         Long userId = Long.parseLong(jwtUtil.parseToken(jwt).getSubject());
-        return userRepository.selectById(userId);
+        return userRepository.findById(userId).orElse(null);
     }
 }

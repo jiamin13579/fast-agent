@@ -33,7 +33,7 @@ public class ChatController {
         Long chatId = ((Number) request.get("chat_id")).longValue();
         String content = (String) request.get("content");
 
-        Chat chat = chatMapper.selectById(chatId);
+        Chat chat = chatMapper.findById(chatId);
         List<Map<String, String>> history = memoryService.getHistory(chatId);
 
         String response = llmAgent.process(content, history);
@@ -55,11 +55,7 @@ public class ChatController {
 
     @GetMapping("/history/{chatId}")
     public List<Message> getHistory(@PathVariable Long chatId) {
-        return messageMapper.selectList(
-            new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<Message>()
-                .eq(Message::getChatId, chatId)
-                .orderByAsc(Message::getCreatedAt)
-        );
+        return messageMapper.findByChatId(chatId);
     }
 
     @PostMapping("/create")
@@ -72,6 +68,6 @@ public class ChatController {
 
     @GetMapping("/list")
     public List<Chat> listChats() {
-        return chatMapper.selectList(null);
+        return chatMapper.findAll();
     }
 }

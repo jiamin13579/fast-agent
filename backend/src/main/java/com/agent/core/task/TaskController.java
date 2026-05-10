@@ -16,7 +16,7 @@ public class TaskController {
 
     @GetMapping("/list")
     public List<ScheduledTask> list() {
-        return scheduledTaskMapper.selectList(null);
+        return scheduledTaskMapper.findAll();
     }
 
     @PostMapping("/save")
@@ -24,7 +24,7 @@ public class TaskController {
         if (task.getId() == null) {
             scheduledTaskMapper.insert(task);
         } else {
-            scheduledTaskMapper.updateById(task);
+            scheduledTaskMapper.update(task);
         }
         return Map.of("success", true);
     }
@@ -37,10 +37,10 @@ public class TaskController {
 
     @PostMapping("/toggle/{id}")
     public Object toggle(@PathVariable Long id) {
-        ScheduledTask task = scheduledTaskMapper.selectById(id);
+        ScheduledTask task = scheduledTaskMapper.findById(id);
         if (task != null) {
             task.setEnabled(!task.getEnabled());
-            scheduledTaskMapper.updateById(task);
+            scheduledTaskMapper.update(task);
         }
         return Map.of("success", true);
     }

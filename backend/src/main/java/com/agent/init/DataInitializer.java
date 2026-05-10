@@ -25,7 +25,7 @@ public class DataInitializer implements CommandLineRunner {
     @Override
     @Transactional
     public void run(String... args) {
-        if (userRepository.selectCount(new com.baomidou.mybatisplus.core.conditions.query.QueryWrapper<>()) > 0) {
+        if (!userRepository.findAll().isEmpty()) {
             return; // 已有数据，跳过
         }
 
@@ -55,6 +55,8 @@ public class DataInitializer implements CommandLineRunner {
         user.setEmail(email);
         user.setNickname(nickname);
         user.setRole(role);
+        user.setCreateTime(java.time.LocalDateTime.now());
+        user.setUpdateTime(java.time.LocalDateTime.now());
         return user;
     }
 }

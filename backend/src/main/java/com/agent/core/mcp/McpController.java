@@ -16,7 +16,7 @@ public class McpController {
 
     @GetMapping("/list")
     public List<McpServer> list() {
-        return mcpServerMapper.selectList(null);
+        return mcpServerMapper.findAll();
     }
 
     @PostMapping("/save")
@@ -24,14 +24,14 @@ public class McpController {
         if (server.getId() == null) {
             mcpServerMapper.insert(server);
         } else {
-            mcpServerMapper.updateById(server);
+            mcpServerMapper.update(server);
         }
         return Map.of("success", true);
     }
 
     @PostMapping("/test/{id}")
     public Map<String, Object> test(@PathVariable Long id) {
-        McpServer server = mcpServerMapper.selectById(id);
+        McpServer server = mcpServerMapper.findById(id);
         if (server == null) {
             return Map.of("success", false, "message", "Server not found");
         }

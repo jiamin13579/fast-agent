@@ -4,14 +4,13 @@ import com.agent.dynamic.entity.ScheduledTask;
 import com.agent.dynamic.entity.Task;
 import com.agent.dynamic.mapper.ScheduledTaskMapper;
 import com.agent.dynamic.mapper.TaskMapper;
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import java.util.*;
 
 @Component
-public class TaskScheduler {
+public class ScheduledTaskRunner {
 
     @Autowired
     private ScheduledTaskMapper scheduledTaskMapper;
@@ -20,14 +19,11 @@ public class TaskScheduler {
     private TaskMapper taskMapper;
 
     @Autowired
-    private TaskExecutor taskExecutor;
+    private TaskExecutionRunner taskExecutionRunner;
 
     @Scheduled(fixedDelay = 10000)
     public void pollScheduledTasks() {
-        List<ScheduledTask> tasks = scheduledTaskMapper.selectList(
-            new LambdaQueryWrapper<ScheduledTask>()
-                .eq(ScheduledTask::getEnabled, true)
-        );
+        List<ScheduledTask> tasks = scheduledTaskMapper.findEnabled();
 
         for (ScheduledTask st : tasks) {
             if (shouldRun(st)) {
@@ -57,8 +53,8 @@ public class TaskScheduler {
 
         // Update last run
         st.setLastRun(new java.sql.Timestamp(System.currentTimeMillis()));
-        scheduledTaskMapper.updateById(st);
+        scheduledTaskMapper.update(st);
 
-        taskExecutor.execute(task);
+        taskExecutionRunner.execute(task);
     }
 }

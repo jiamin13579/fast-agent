@@ -2,7 +2,6 @@ package com.agent.core.skill;
 
 import com.agent.dynamic.entity.Skill;
 import com.agent.dynamic.mapper.SkillMapper;
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import java.util.List;
@@ -14,26 +13,23 @@ public class SkillService {
     private SkillMapper skillMapper;
 
     public List<Skill> getEnabledSkills() {
-        return skillMapper.selectList(
-            new LambdaQueryWrapper<Skill>().eq(Skill::getEnabled, true)
-        );
+        return skillMapper.findEnabled();
     }
 
     public Skill getSkillByName(String name) {
-        return skillMapper.selectOne(
-            new LambdaQueryWrapper<Skill>().eq(Skill::getName, name)
-        );
+        List<Skill> skills = skillMapper.findAll();
+        return skills.stream().filter(s -> name.equals(s.getName())).findFirst().orElse(null);
     }
 
     public List<Skill> getAllSkills() {
-        return skillMapper.selectList(null);
+        return skillMapper.findAll();
     }
 
     public void save(Skill skill) {
         if (skill.getId() == null) {
             skillMapper.insert(skill);
         } else {
-            skillMapper.updateById(skill);
+            skillMapper.update(skill);
         }
     }
 
@@ -42,6 +38,6 @@ public class SkillService {
     }
 
     public Skill getById(Long id) {
-        return skillMapper.selectById(id);
+        return skillMapper.findById(id);
     }
 }

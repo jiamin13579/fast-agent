@@ -2,6 +2,8 @@ package com.agent.controller;
 
 import com.agent.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
@@ -14,12 +16,12 @@ public class AdminUserController {
     private UserService userService;
 
     @PostMapping("/{id}/reset-password")
-    public Map<String, String> resetPassword(@PathVariable Long id) {
+    public ResponseEntity<?> resetPassword(@PathVariable Long id) {
         try {
             String newPassword = userService.resetPassword(id);
-            return Map.of("newPassword", newPassword);
+            return ResponseEntity.ok(Map.of("newPassword", newPassword));
         } catch (RuntimeException e) {
-            throw new ResponseStatusException(400, e.getMessage());
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
         }
     }
 }

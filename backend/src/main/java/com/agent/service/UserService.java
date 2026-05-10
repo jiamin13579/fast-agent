@@ -18,7 +18,7 @@ public class UserService {
     private PasswordEncoder passwordEncoder;
 
     public String resetPassword(Long userId) {
-        User user = userRepository.selectById(userId);
+        User user = userRepository.findById(userId).orElse(null);
         if (user == null) {
             throw new RuntimeException("用户不存在");
         }
@@ -26,7 +26,7 @@ public class UserService {
         String newPassword = generateRandomPassword(8);
         user.setPassword(passwordEncoder.encode(newPassword));
         user.setMustChangePassword(true);
-        userRepository.updateById(user);
+        userRepository.update(user);
 
         return newPassword;
     }

@@ -1,13 +1,10 @@
 package com.agent.dynamic.entity;
 
-import com.baomidou.mybatisplus.annotation.*;
 import lombok.Data;
 import java.time.LocalDateTime;
 
 @Data
-@TableName("agent_message")
 public class Message {
-    @TableId(type = IdType.AUTO)
     private Long id;
     private Long chatId;
     private String role;

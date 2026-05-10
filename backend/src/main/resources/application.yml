@@ -8,14 +8,14 @@ spring:
     password: Db@Adm123
     driver-class-name: com.mysql.cj.jdbc.Driver
 
-mybatis-plus:
+mybatis:
   configuration:
     map-underscore-to-camel-case: true
-  global-config:
-    db-config:
-      id-type: auto
 
 agent:
+  jwt:
+    secret: ${JWT_SECRET:my-super-secret-jwt-key-that-should-be-at-least-256-bits-long-for-hs256}
+    expiration: 604800000
   llm:
     provider: minimax
     api-key: ${LLM_API_KEY:your-api-key}

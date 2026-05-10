@@ -1,9 +1,27 @@
 package com.agent.dynamic.mapper;
 
-import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.agent.dynamic.entity.Log;
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Select;
+import org.apache.ibatis.annotations.Insert;
+import org.apache.ibatis.annotations.Delete;
+import java.util.List;
 
 @Mapper
-public interface LogMapper extends BaseMapper<Log> {
+public interface LogMapper {
+    @Select("SELECT * FROM agent_log WHERE id = #{id}")
+    Log findById(Long id);
+
+    @Select("SELECT * FROM agent_log WHERE task_id = #{taskId} ORDER BY created_at DESC")
+    List<Log> findByTaskId(Long taskId);
+
+    @Select("SELECT * FROM agent_log ORDER BY created_at DESC")
+    List<Log> findAll();
+
+    @Insert("INSERT INTO agent_log (task_id, level, message, source, stack_trace, created_at) " +
+            "VALUES (#{taskId}, #{level}, #{message}, #{source}, #{stackTrace}, #{createdAt})")
+    int insert(Log log);
+
+    @Delete("DELETE FROM agent_log WHERE id = #{id}")
+    int deleteById(Long id);
 }

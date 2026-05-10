@@ -4,7 +4,6 @@ import com.agent.dynamic.entity.Message;
 import com.agent.dynamic.mapper.MessageMapper;
 import com.agent.dynamic.mapper.ChatMapper;
 import com.agent.dynamic.entity.Chat;
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import java.util.*;
@@ -22,11 +21,7 @@ public class MemoryService {
     private static final int MAX_CONTEXT_MESSAGES = 50;
 
     public List<Map<String, String>> getHistory(Long chatId) {
-        List<Message> messages = messageMapper.selectList(
-            new LambdaQueryWrapper<Message>()
-                .eq(Message::getChatId, chatId)
-                .orderByAsc(Message::getCreatedAt)
-        );
+        List<Message> messages = messageMapper.findByChatId(chatId);
 
         return messages.stream()
             .map(m -> Map.of("role", m.getRole(), "content", m.getContent()))
@@ -48,14 +43,15 @@ public class MemoryService {
     }
 
     public void clearHistory(Long chatId) {
-        messageMapper.delete(
-            new LambdaQueryWrapper<Message>().eq(Message::getChatId, chatId)
-        );
+        List<Message> messages = messageMapper.findByChatId(chatId);
+        for (Message m : messages) {
+            messageMapper.deleteById(m.getId());
+        }
     }
 
     public Chat getOrCreateChat(Long chatId) {
         if (chatId != null) {
-            Chat chat = chatMapper.selectById(chatId);
+            Chat chat = chatMapper.findById(chatId);
             if (chat != null) return chat;
         }
 

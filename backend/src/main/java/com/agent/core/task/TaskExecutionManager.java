@@ -11,7 +11,7 @@ import org.springframework.stereotype.Component;
 import java.util.Map;
 
 @Component
-public class TaskExecutor {
+public class TaskExecutionManager {
 
     @Autowired
     private TaskMapper taskMapper;
@@ -26,7 +26,7 @@ public class TaskExecutor {
 
     public void execute(Task task) {
         task.setStatus("RUNNING");
-        taskMapper.updateById(task);
+        taskMapper.update(task);
 
         log(task.getId(), "INFO", "Task started: " + task.getName());
 
@@ -52,7 +52,7 @@ public class TaskExecutor {
             log(task.getId(), "ERROR", e.getMessage());
         }
 
-        taskMapper.updateById(task);
+        taskMapper.update(task);
         log(task.getId(), "INFO", "Task completed with status: " + task.getStatus());
     }
 

@@ -1,1 +1,43 @@
+# Build outputs
 backend/target/
+backend/node_modules/
+mcp-server/
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+frontend/build/
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# Logs
+*.log
+logs/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment
+.env
+.env.local
+*.local
+
+# Claude
+.claude/
+
+# Package managers
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Testing
+test-results/
+playwright-report/
+
+# Misc
+*.pem
+*.tsbuildinfo
+next-env.d.ts
