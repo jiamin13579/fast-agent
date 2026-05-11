@@ -1,11 +1,11 @@
 package com.agent.dynamic.mapper;
 
 import com.agent.dynamic.entity.Log;
+import java.util.List;
+import org.apache.ibatis.annotations.Delete;
+import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Select;
-import org.apache.ibatis.annotations.Insert;
-import org.apache.ibatis.annotations.Delete;
-import java.util.List;
 
 @Mapper
 public interface LogMapper {
@@ -18,8 +18,9 @@ public interface LogMapper {
     @Select("SELECT * FROM agent_log ORDER BY created_at DESC")
     List<Log> findAll();
 
-    @Insert("INSERT INTO agent_log (task_id, level, message, source, stack_trace, created_at) " +
-            "VALUES (#{taskId}, #{level}, #{message}, #{source}, #{stackTrace}, #{createdAt})")
+    @Insert(
+            "INSERT INTO agent_log (task_id, level, message, source, stack_trace, created_at) "
+                    + "VALUES (#{taskId}, #{level}, #{message}, #{source}, #{stackTrace}, #{createdAt})")
     int insert(Log log);
 
     @Delete("DELETE FROM agent_log WHERE id = #{id}")

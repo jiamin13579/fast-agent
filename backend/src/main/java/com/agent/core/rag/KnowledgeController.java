@@ -1,16 +1,15 @@
 package com.agent.core.rag;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Map;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/knowledge")
 public class KnowledgeController {
 
-    @Autowired
-    private RagService ragService;
+    @Autowired private RagService ragService;
 
     @GetMapping("/files")
     public List<String> listFiles() {

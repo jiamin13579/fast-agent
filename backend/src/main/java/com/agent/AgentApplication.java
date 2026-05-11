@@ -6,7 +6,9 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.task.TaskSchedulingAutoConfiguration;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
-@SpringBootApplication(scanBasePackages = {"com.agent"}, exclude = {TaskSchedulingAutoConfiguration.class})
+@SpringBootApplication(
+        scanBasePackages = {"com.agent"},
+        exclude = {TaskSchedulingAutoConfiguration.class})
 @EnableScheduling
 @MapperScan("com.agent.repository")
 public class AgentApplication {

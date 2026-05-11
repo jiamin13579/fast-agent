@@ -7,5 +7,6 @@ import java.lang.annotation.*;
 @Documented
 public @interface Tool {
     String name();
+
     String description();
 }

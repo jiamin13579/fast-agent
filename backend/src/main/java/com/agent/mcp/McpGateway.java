@@ -1,11 +1,11 @@
 package com.agent.mcp;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.Map;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import java.util.Map;
 
 @Component
 public class McpGateway {
@@ -24,13 +24,15 @@ public class McpGateway {
         try {
             McpRequest request = new McpRequest(tool, params);
 
-            String response = webClient.post()
-                    .uri(defaultUrl + "/execute")
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .bodyValue(objectMapper.writeValueAsString(request))
-                    .retrieve()
-                    .bodyToMono(String.class)
-                    .block();
+            String response =
+                    webClient
+                            .post()
+                            .uri(defaultUrl + "/execute")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .bodyValue(objectMapper.writeValueAsString(request))
+                            .retrieve()
+                            .bodyToMono(String.class)
+                            .block();
 
             return objectMapper.readValue(response, McpResponse.class);
         } catch (Exception e) {

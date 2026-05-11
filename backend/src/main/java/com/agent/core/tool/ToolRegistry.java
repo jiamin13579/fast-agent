@@ -1,8 +1,8 @@
 package com.agent.core.tool;
 
-import org.springframework.stereotype.Component;
-import java.util.*;
 import java.lang.reflect.Method;
+import java.util.*;
+import org.springframework.stereotype.Component;
 
 @Component
 public class ToolRegistry {

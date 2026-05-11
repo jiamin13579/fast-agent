@@ -1,12 +1,12 @@
 package com.agent.dynamic.mapper;
 
 import com.agent.dynamic.entity.KnowledgeSource;
+import java.util.List;
+import org.apache.ibatis.annotations.Delete;
+import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Select;
-import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Update;
-import org.apache.ibatis.annotations.Delete;
-import java.util.List;
 
 @Mapper
 public interface KnowledgeSourceMapper {
@@ -19,12 +19,14 @@ public interface KnowledgeSourceMapper {
     @Select("SELECT * FROM agent_knowledge_source WHERE enabled = true ORDER BY created_at DESC")
     List<KnowledgeSource> findEnabled();
 
-    @Insert("INSERT INTO agent_knowledge_source (name, type, config, enabled, created_at, updated_at) " +
-            "VALUES (#{name}, #{type}, #{config}, #{enabled}, #{createdAt}, #{updatedAt})")
+    @Insert(
+            "INSERT INTO agent_knowledge_source (name, type, config, enabled, created_at, updated_at) "
+                    + "VALUES (#{name}, #{type}, #{config}, #{enabled}, #{createdAt}, #{updatedAt})")
     int insert(KnowledgeSource knowledgeSource);
 
-    @Update("UPDATE agent_knowledge_source SET name=#{name}, type=#{type}, config=#{config}, enabled=#{enabled}, " +
-            "updated_at=#{updatedAt} WHERE id=#{id}")
+    @Update(
+            "UPDATE agent_knowledge_source SET name=#{name}, type=#{type}, config=#{config}, enabled=#{enabled}, "
+                    + "updated_at=#{updatedAt} WHERE id=#{id}")
     int update(KnowledgeSource knowledgeSource);
 
     @Delete("DELETE FROM agent_knowledge_source WHERE id = #{id}")

@@ -1,17 +1,16 @@
 package com.agent.core.skill;
 
 import com.agent.dynamic.entity.Skill;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Map;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/skill")
 public class SkillController {
 
-    @Autowired
-    private SkillService skillService;
+    @Autowired private SkillService skillService;
 
     @GetMapping("/list")
     public List<Skill> list() {

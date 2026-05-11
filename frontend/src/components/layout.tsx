@@ -1,14 +1,9 @@
 "use client";
 
 import { createContext, useContext, useState } from "react";
+import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import {
-  MessageSquare,
-  Sparkles,
-  Clock,
-  Key,
-  Palette,
-} from "lucide-react";
+import { MessageSquare, Sparkles, Clock, Key, Palette } from "lucide-react";
 
 type View = "chat" | "skills" | "tasks" | "llm" | "preferences";
 
@@ -71,27 +66,21 @@ export function Sidebar() {
       </nav>
 
       {/* Version */}
-      <div className="p-4 text-center text-blue-300/50 text-xs border-t border-blue-100">
-        v1
-      </div>
+      <div className="p-4 text-center text-blue-300/50 text-xs border-t border-blue-100">v1</div>
     </aside>
   );
 }
 
-export default function AppLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function AppLayout({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
   const [view, setView] = useState<View>("chat");
+  const hideSidebar = pathname === "/login";
 
   return (
     <AppContext.Provider value={{ view, setView }}>
       <div className="flex h-screen">
-        <Sidebar />
-        <main className="flex-1 h-screen overflow-hidden">
-          {children}
-        </main>
+        {!hideSidebar && <Sidebar />}
+        <main className="flex-1 h-screen overflow-hidden">{children}</main>
       </div>
     </AppContext.Provider>
   );

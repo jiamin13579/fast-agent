@@ -1,26 +1,23 @@
 package com.agent.core.task;
 
-import com.agent.dynamic.entity.Task;
-import com.agent.dynamic.entity.Log;
-import com.agent.dynamic.mapper.TaskMapper;
-import com.agent.dynamic.mapper.LogMapper;
 import com.agent.core.skill.SkillService;
+import com.agent.dynamic.entity.Log;
+import com.agent.dynamic.entity.Task;
+import com.agent.dynamic.mapper.LogMapper;
+import com.agent.dynamic.mapper.TaskMapper;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-import java.util.Map;
 
 @Component
 public class TaskExecutionRunner {
 
-    @Autowired
-    private TaskMapper taskMapper;
+    @Autowired private TaskMapper taskMapper;
 
-    @Autowired
-    private LogMapper logMapper;
+    @Autowired private LogMapper logMapper;
 
-    @Autowired
-    private SkillService skillService;
+    @Autowired private SkillService skillService;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -36,9 +33,10 @@ public class TaskExecutionRunner {
                 task.setStatus("FAILED");
                 task.setErrorMsg("Skill not found: " + task.getSkillId());
             } else {
-                Map<String, Object> params = task.getParams() != null
-                    ? objectMapper.readValue(task.getParams(), Map.class)
-                    : new java.util.HashMap<>();
+                Map<String, Object> params =
+                        task.getParams() != null
+                                ? objectMapper.readValue(task.getParams(), Map.class)
+                                : new java.util.HashMap<>();
 
                 task.setStatus("COMPLETED");
                 task.setResult("Skill executed: " + skill.getName());

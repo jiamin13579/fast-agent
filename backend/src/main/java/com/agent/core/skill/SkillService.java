@@ -2,15 +2,14 @@ package com.agent.core.skill;
 
 import com.agent.dynamic.entity.Skill;
 import com.agent.dynamic.mapper.SkillMapper;
+import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import java.util.List;
 
 @Service
 public class SkillService {
 
-    @Autowired
-    private SkillMapper skillMapper;
+    @Autowired private SkillMapper skillMapper;
 
     public List<Skill> getEnabledSkills() {
         return skillMapper.findEnabled();

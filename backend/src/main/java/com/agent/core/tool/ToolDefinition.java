@@ -1,7 +1,7 @@
 package com.agent.core.tool;
 
-import lombok.Data;
 import java.util.Map;
+import lombok.Data;
 
 @Data
 public class ToolDefinition {

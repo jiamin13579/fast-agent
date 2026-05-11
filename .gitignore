@@ -27,6 +27,10 @@ Thumbs.db
 
 # Claude
 .claude/
+.agents/
+.codex/
+**/.agents/
+**/.codex/
 
 # Package managers
 package-lock.json

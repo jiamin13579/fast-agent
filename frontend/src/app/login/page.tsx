@@ -39,7 +39,9 @@ export default function LoginPage() {
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <label htmlFor="email" className="text-sm font-medium">邮箱</label>
+              <label htmlFor="email" className="text-sm font-medium">
+                邮箱
+              </label>
               <Input
                 id="email"
                 type="email"
@@ -50,7 +52,9 @@ export default function LoginPage() {
               />
             </div>
             <div className="space-y-2">
-              <label htmlFor="password" className="text-sm font-medium">密码</label>
+              <label htmlFor="password" className="text-sm font-medium">
+                密码
+              </label>
               <Input
                 id="password"
                 type="password"

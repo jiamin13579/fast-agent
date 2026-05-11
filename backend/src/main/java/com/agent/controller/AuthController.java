@@ -2,19 +2,17 @@ package com.agent.controller;
 
 import com.agent.entity.User;
 import com.agent.service.AuthService;
+import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Map;
-
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {
 
-    @Autowired
-    private AuthService authService;
+    @Autowired private AuthService authService;
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody Map<String, String> body) {
@@ -28,7 +26,8 @@ public class AuthController {
         try {
             return ResponseEntity.ok(authService.login(email, password));
         } catch (RuntimeException e) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", e.getMessage()));
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("message", e.getMessage()));
         }
     }
 
@@ -37,16 +36,18 @@ public class AuthController {
         try {
             User user = authService.getCurrentUser(authHeader);
             if (user.getRole() == null) {
-                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("message", "用户角色未设置"));
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                        .body(Map.of("message", "用户角色未设置"));
             }
-            return ResponseEntity.ok(Map.of(
-                "id", user.getId(),
-                "email", user.getEmail(),
-                "nickname", user.getNickname(),
-                "role", user.getRole().name()
-            ));
+            return ResponseEntity.ok(
+                    Map.of(
+                            "id", user.getId(),
+                            "email", user.getEmail(),
+                            "nickname", user.getNickname(),
+                            "role", user.getRole().name()));
         } catch (RuntimeException e) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", e.getMessage()));
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("message", e.getMessage()));
         }
     }
 }

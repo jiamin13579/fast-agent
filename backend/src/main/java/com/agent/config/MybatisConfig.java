@@ -1,5 +1,6 @@
 package com.agent.config;
 
+import javax.sql.DataSource;
 import org.apache.ibatis.session.SqlSessionFactory;
 import org.mybatis.spring.SqlSessionFactoryBean;
 import org.mybatis.spring.annotation.MapperScan;
@@ -8,8 +9,6 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.transaction.PlatformTransactionManager;
-
-import javax.sql.DataSource;
 
 @Configuration
 @MapperScan("com.agent.dynamic.mapper")
@@ -21,15 +20,16 @@ public class MybatisConfig {
         sessionFactory.setDataSource(dataSource);
         sessionFactory.setTypeAliasesPackage("com.agent.entity");
 
-        org.apache.ibatis.session.Configuration configuration = new org.apache.ibatis.session.Configuration();
+        org.apache.ibatis.session.Configuration configuration =
+                new org.apache.ibatis.session.Configuration();
         configuration.setMapUnderscoreToCamelCase(true);
         configuration.setDefaultFetchSize(100);
         configuration.setDefaultStatementTimeout(30000);
         sessionFactory.setConfiguration(configuration);
 
         sessionFactory.setMapperLocations(
-            new PathMatchingResourcePatternResolver().getResources("classpath*:mapper/**/*.xml")
-        );
+                new PathMatchingResourcePatternResolver()
+                        .getResources("classpath*:mapper/**/*.xml"));
 
         return sessionFactory.getObject();
     }

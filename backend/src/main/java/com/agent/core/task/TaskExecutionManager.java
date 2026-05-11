@@ -1,26 +1,23 @@
 package com.agent.core.task;
 
-import com.agent.dynamic.entity.Task;
-import com.agent.dynamic.entity.Log;
-import com.agent.dynamic.mapper.TaskMapper;
-import com.agent.dynamic.mapper.LogMapper;
 import com.agent.core.skill.SkillService;
+import com.agent.dynamic.entity.Log;
+import com.agent.dynamic.entity.Task;
+import com.agent.dynamic.mapper.LogMapper;
+import com.agent.dynamic.mapper.TaskMapper;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-import java.util.Map;
 
 @Component
 public class TaskExecutionManager {
 
-    @Autowired
-    private TaskMapper taskMapper;
+    @Autowired private TaskMapper taskMapper;
 
-    @Autowired
-    private LogMapper logMapper;
+    @Autowired private LogMapper logMapper;
 
-    @Autowired
-    private SkillService skillService;
+    @Autowired private SkillService skillService;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -37,10 +34,12 @@ public class TaskExecutionManager {
                 task.setStatus("FAILED");
                 task.setErrorMsg("Skill not found: " + task.getSkillId());
             } else {
-                // Parse params and execute (placeholder - actual execution depends on skill implementation)
-                Map<String, Object> params = task.getParams() != null
-                    ? objectMapper.readValue(task.getParams(), Map.class)
-                    : new java.util.HashMap<>();
+                // Parse params and execute (placeholder - actual execution depends on skill
+                // implementation)
+                Map<String, Object> params =
+                        task.getParams() != null
+                                ? objectMapper.readValue(task.getParams(), Map.class)
+                                : new java.util.HashMap<>();
 
                 // In a full implementation, this would invoke the actual skill
                 task.setStatus("COMPLETED");

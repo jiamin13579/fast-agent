@@ -4,22 +4,19 @@ import com.agent.dynamic.entity.ScheduledTask;
 import com.agent.dynamic.entity.Task;
 import com.agent.dynamic.mapper.ScheduledTaskMapper;
 import com.agent.dynamic.mapper.TaskMapper;
+import java.util.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
-import java.util.*;
 
 @Component
 public class ScheduledTaskRunner {
 
-    @Autowired
-    private ScheduledTaskMapper scheduledTaskMapper;
+    @Autowired private ScheduledTaskMapper scheduledTaskMapper;
 
-    @Autowired
-    private TaskMapper taskMapper;
+    @Autowired private TaskMapper taskMapper;
 
-    @Autowired
-    private TaskExecutionRunner taskExecutionRunner;
+    @Autowired private TaskExecutionRunner taskExecutionRunner;
 
     @Scheduled(fixedDelay = 10000)
     public void pollScheduledTasks() {

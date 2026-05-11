@@ -1,11 +1,11 @@
 package com.agent.core.rag;
 
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Service;
 import java.io.*;
 import java.nio.file.*;
 import java.util.*;
 import java.util.stream.Collectors;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
 
 @Service
 public class RagService {
@@ -37,12 +37,16 @@ public class RagService {
             if (!Files.exists(path)) return files;
 
             Files.walk(path)
-                .filter(Files::isRegularFile)
-                .filter(p -> {
-                    String ext = p.toString().toLowerCase();
-                    return ext.endsWith(".txt") || ext.endsWith(".md") || ext.endsWith(".pdf");
-                })
-                .forEach(p -> files.add(new FileInfo(p.toString(), p.getFileName().toString())));
+                    .filter(Files::isRegularFile)
+                    .filter(
+                            p -> {
+                                String ext = p.toString().toLowerCase();
+                                return ext.endsWith(".txt")
+                                        || ext.endsWith(".md")
+                                        || ext.endsWith(".pdf");
+                            })
+                    .forEach(
+                            p -> files.add(new FileInfo(p.toString(), p.getFileName().toString())));
         } catch (IOException e) {
             // Ignore
         }
@@ -60,7 +64,8 @@ public class RagService {
     private double calculateSimilarity(String query, String content) {
         // Simple keyword matching - can be upgraded to embeddings
         Set<String> queryWords = new HashSet<>(Arrays.asList(query.toLowerCase().split("\\s+")));
-        Set<String> contentWords = new HashSet<>(Arrays.asList(content.toLowerCase().split("\\s+")));
+        Set<String> contentWords =
+                new HashSet<>(Arrays.asList(content.toLowerCase().split("\\s+")));
 
         queryWords.retainAll(contentWords);
         return (double) queryWords.size() / queryWords.size();
@@ -72,18 +77,19 @@ public class RagService {
         StringBuilder sb = new StringBuilder("相关知识：\n");
         for (SearchResult r : results) {
             sb.append("文件: ").append(r.path).append("\n");
-            sb.append("内容: ").append(r.content.substring(0, Math.min(500, r.content.length()))).append("\n");
+            sb.append("内容: ")
+                    .append(r.content.substring(0, Math.min(500, r.content.length())))
+                    .append("\n");
             sb.append("---\n");
         }
         return sb.toString();
     }
 
     public List<String> listKnowledgeFiles() {
-        return listFiles(knowledgePath).stream()
-            .map(f -> f.path)
-            .collect(Collectors.toList());
+        return listFiles(knowledgePath).stream().map(f -> f.path).collect(Collectors.toList());
     }
 
     private record FileInfo(String path, String name) {}
+
     private record SearchResult(String path, String content, double score) {}
 }

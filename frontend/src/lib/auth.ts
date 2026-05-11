@@ -1,4 +1,5 @@
-const API_BASE = "http://localhost:8080/api";
+import { API_BASE } from "@/lib/config";
+
 const TOKEN_KEY = "auth_token";
 const USER_KEY = "auth_user";
 

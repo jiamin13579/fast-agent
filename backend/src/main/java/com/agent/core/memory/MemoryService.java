@@ -1,22 +1,20 @@
 package com.agent.core.memory;
 
-import com.agent.dynamic.entity.Message;
-import com.agent.dynamic.mapper.MessageMapper;
-import com.agent.dynamic.mapper.ChatMapper;
 import com.agent.dynamic.entity.Chat;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
+import com.agent.dynamic.entity.Message;
+import com.agent.dynamic.mapper.ChatMapper;
+import com.agent.dynamic.mapper.MessageMapper;
 import java.util.*;
 import java.util.stream.Collectors;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
 @Service
 public class MemoryService {
 
-    @Autowired
-    private MessageMapper messageMapper;
+    @Autowired private MessageMapper messageMapper;
 
-    @Autowired
-    private ChatMapper chatMapper;
+    @Autowired private ChatMapper chatMapper;
 
     private static final int MAX_CONTEXT_MESSAGES = 50;
 
@@ -24,8 +22,8 @@ public class MemoryService {
         List<Message> messages = messageMapper.findByChatId(chatId);
 
         return messages.stream()
-            .map(m -> Map.of("role", m.getRole(), "content", m.getContent()))
-            .collect(Collectors.toList());
+                .map(m -> Map.of("role", m.getRole(), "content", m.getContent()))
+                .collect(Collectors.toList());
     }
 
     public List<Map<String, String>> getContextWindow(Long chatId, int maxMessages) {

@@ -3,24 +3,20 @@ package com.agent.service;
 import com.agent.entity.User;
 import com.agent.repository.UserRepository;
 import com.agent.util.JwtUtil;
+import java.util.HashMap;
+import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.util.HashMap;
-import java.util.Map;
-
 @Service
 public class AuthService {
 
-    @Autowired
-    private UserRepository userRepository;
+    @Autowired private UserRepository userRepository;
 
-    @Autowired
-    private PasswordEncoder passwordEncoder;
+    @Autowired private PasswordEncoder passwordEncoder;
 
-    @Autowired
-    private JwtUtil jwtUtil;
+    @Autowired private JwtUtil jwtUtil;
 
     public Map<String, Object> login(String email, String password) {
         User user = userRepository.findByEmail(email).orElse(null);
@@ -37,13 +33,14 @@ public class AuthService {
 
         Map<String, Object> result = new HashMap<>();
         result.put("token", token);
-        result.put("user", Map.of(
-            "id", user.getId(),
-            "email", user.getEmail(),
-            "nickname", user.getNickname(),
-            "role", user.getRole().name(),
-            "mustChangePassword", user.getMustChangePassword()
-        ));
+        result.put(
+                "user",
+                Map.of(
+                        "id", user.getId(),
+                        "email", user.getEmail(),
+                        "nickname", user.getNickname(),
+                        "role", user.getRole().name(),
+                        "mustChangePassword", user.getMustChangePassword()));
 
         return result;
     }

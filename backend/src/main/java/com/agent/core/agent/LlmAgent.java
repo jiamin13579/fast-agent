@@ -2,20 +2,18 @@ package com.agent.core.agent;
 
 import com.agent.adapter.LlmAdapter;
 import com.agent.adapter.LlmResponse;
-import com.agent.core.tool.ToolRegistry;
 import com.agent.core.tool.ToolDefinition;
+import com.agent.core.tool.ToolRegistry;
+import java.util.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-import java.util.*;
 
 @Component
 public class LlmAgent {
 
-    @Autowired
-    private LlmAdapter llmAdapter;
+    @Autowired private LlmAdapter llmAdapter;
 
-    @Autowired
-    private ToolRegistry toolRegistry;
+    @Autowired private ToolRegistry toolRegistry;
 
     private static final int MAX_LOOPS = 10;
 
@@ -58,8 +56,7 @@ public class LlmAgent {
     private Map<String, Object> parseArgs(String argsJson) {
         if (argsJson == null || argsJson.isEmpty()) return new HashMap<>();
         try {
-            return new com.fasterxml.jackson.databind.ObjectMapper()
-                .readValue(argsJson, Map.class);
+            return new com.fasterxml.jackson.databind.ObjectMapper().readValue(argsJson, Map.class);
         } catch (Exception e) {
             return new HashMap<>();
         }

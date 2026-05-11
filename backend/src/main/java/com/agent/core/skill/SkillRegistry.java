@@ -1,24 +1,22 @@
 package com.agent.core.skill;
 
-import com.agent.core.tool.ToolRegistry;
-import com.agent.core.tool.ToolDefinition;
 import com.agent.core.tool.ParamDefinition;
+import com.agent.core.tool.ToolDefinition;
+import com.agent.core.tool.ToolRegistry;
 import com.agent.dynamic.entity.Skill;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
 import jakarta.annotation.PostConstruct;
 import java.util.*;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
 @Component
 public class SkillRegistry {
 
-    @Autowired
-    private SkillService skillService;
+    @Autowired private SkillService skillService;
 
-    @Autowired
-    private ToolRegistry toolRegistry;
+    @Autowired private ToolRegistry toolRegistry;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -37,25 +35,26 @@ public class SkillRegistry {
     private void registerSkill(Skill skill) {
         try {
             // Parse tools JSON: [{"method": "methodName", "desc": "description", "params": [...]}]
-            List<Map<String, Object>> tools = objectMapper.readValue(
-                skill.getTools(),
-                new TypeReference<List<Map<String, Object>>>() {}
-            );
+            List<Map<String, Object>> tools =
+                    objectMapper.readValue(
+                            skill.getTools(), new TypeReference<List<Map<String, Object>>>() {});
 
             for (Map<String, Object> toolDef : tools) {
                 String methodName = (String) toolDef.get("method");
                 String desc = (String) toolDef.get("desc");
 
                 Map<String, ParamDefinition> params = new HashMap<>();
-                List<Map<String, String>> paramList = (List<Map<String, String>>) toolDef.get("params");
+                List<Map<String, String>> paramList =
+                        (List<Map<String, String>>) toolDef.get("params");
                 if (paramList != null) {
                     for (Map<String, String> p : paramList) {
-                        params.put(p.get("name"), new ParamDefinition(
-                            p.get("name"),
-                            p.get("type"),
-                            p.get("desc"),
-                            Boolean.parseBoolean(p.get("required"))
-                        ));
+                        params.put(
+                                p.get("name"),
+                                new ParamDefinition(
+                                        p.get("name"),
+                                        p.get("type"),
+                                        p.get("desc"),
+                                        Boolean.parseBoolean(p.get("required"))));
                     }
                 }
 

@@ -79,3 +79,34 @@ export LLM_BASE_URL=https://api.minimax.chat
 - 使用 `Cmd+Shift+R` 硬刷新浏览器以清除缓存
 - 前端代码位于 `frontend/src/`
 - 后端代码位于 `backend/src/main/java/com/agent/`
+
+## 风格规范与格式化
+
+### 前端
+
+```bash
+cd frontend
+npm run lint
+npm run format:check
+```
+
+自动修复格式：
+
+```bash
+cd frontend
+npm run format
+```
+
+### 后端
+
+```bash
+cd backend
+mvn spotless:check
+```
+
+自动修复格式：
+
+```bash
+cd backend
+mvn spotless:apply
+```

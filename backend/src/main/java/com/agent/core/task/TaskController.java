@@ -2,17 +2,16 @@ package com.agent.core.task;
 
 import com.agent.dynamic.entity.ScheduledTask;
 import com.agent.dynamic.mapper.ScheduledTaskMapper;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Map;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/task")
 public class TaskController {
 
-    @Autowired
-    private ScheduledTaskMapper scheduledTaskMapper;
+    @Autowired private ScheduledTaskMapper scheduledTaskMapper;
 
     @GetMapping("/list")
     public List<ScheduledTask> list() {

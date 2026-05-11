@@ -2,17 +2,16 @@ package com.agent.core.mcp;
 
 import com.agent.dynamic.entity.McpServer;
 import com.agent.dynamic.mapper.McpServerMapper;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Map;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/mcp")
 public class McpController {
 
-    @Autowired
-    private McpServerMapper mcpServerMapper;
+    @Autowired private McpServerMapper mcpServerMapper;
 
     @GetMapping("/list")
     public List<McpServer> list() {
