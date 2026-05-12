@@ -1,7 +1,7 @@
 "use client";
 
-import { createContext, useContext, useState } from "react";
-import { usePathname } from "next/navigation";
+import { createContext, useContext, useState, useEffect, useRef } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { MessageSquare, Sparkles, Clock, Key, Palette } from "lucide-react";
 
@@ -71,8 +71,100 @@ export function Sidebar() {
   );
 }
 
+function getInitials(name: string): string {
+  return name ? name.charAt(0).toUpperCase() : "?";
+}
+
+export function HeaderRight() {
+  const [isOpen, setIsOpen] = useState(false);
+  const [user, setUser] = useState<{ nickname: string; email: string; role: string } | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const router = useRouter();
+
+  useEffect(() => {
+    const token = localStorage.getItem("auth_token");
+    if (token) {
+      fetch(`${process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8080/api"}/auth/me`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          setUser(data);
+          setIsLoading(false);
+        })
+        .catch(() => {
+          setIsLoading(false);
+        });
+    } else {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem("auth_token");
+    localStorage.removeItem("auth_user");
+    router.push("/login");
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center gap-2 px-4">
+        <div className="w-8 h-8 rounded-full bg-blue-100 animate-pulse" />
+        <div className="w-16 h-4 bg-blue-100 rounded animate-pulse" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="relative" ref={menuRef}>
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="flex items-center gap-2 px-4 py-2 rounded-lg hover:bg-blue-50 transition-colors"
+      >
+        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center text-white text-sm font-medium">
+          {getInitials(user?.nickname || "")}
+        </div>
+        <span className="text-sm text-blue-700">{user?.nickname || "用户"}</span>
+        <span className="text-blue-400 text-xs">{isOpen ? "▲" : "▼"}</span>
+      </button>
+
+      {isOpen && (
+        <div className="absolute right-0 top-full mt-2 w-56 bg-white rounded-lg shadow-lg border border-blue-100 py-2 z-50">
+          <div className="px-4 py-2 border-b border-blue-50">
+            <div className="font-medium text-blue-800">{user?.nickname}</div>
+            <div className="text-xs text-blue-400">{user?.email}</div>
+            <div className="mt-1">
+              <span className="inline-block px-2 py-0.5 text-xs rounded-full bg-blue-100 text-blue-600">
+                {user?.role || "USER"}
+              </span>
+            </div>
+          </div>
+          <button
+            onClick={handleLogout}
+            className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
+          >
+            <span>🚪</span> 退出登录
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
   const [view, setView] = useState<View>("chat");
   const hideSidebar = pathname === "/login";
 
@@ -80,7 +172,12 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     <AppContext.Provider value={{ view, setView }}>
       <div className="flex h-screen">
         {!hideSidebar && <Sidebar />}
-        <main className="flex-1 h-screen overflow-hidden">{children}</main>
+        <div className="flex-1 flex flex-col">
+          <header className="h-14 bg-white border-b border-blue-100 flex items-center justify-end px-4">
+            <HeaderRight />
+          </header>
+          <main className="flex-1 h-screen overflow-hidden">{children}</main>
+        </div>
       </div>
     </AppContext.Provider>
   );
