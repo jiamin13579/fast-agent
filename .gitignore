@@ -45,3 +45,6 @@ playwright-report/
 *.pem
 *.tsbuildinfo
 next-env.d.ts
+
+# Worktrees
+.worktrees/
