@@ -94,7 +94,7 @@ function ChatView() {
       const res = await fetch(`${API_BASE}/chat/list`, {
         headers: buildAuthHeaders(),
       });
-      if (res.status === 401) {
+      if (res.status === 401 || res.status === 403) {
         clearAuth();
         window.location.href = "/login";
         return;
