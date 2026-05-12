@@ -1,8 +1,6 @@
 import type { Metadata } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
-import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/sonner";
-import "./globals.css";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -27,10 +25,8 @@ export default function RootLayout({
   return (
     <html lang="zh-CN" className={`${inter.variable} ${jetbrainsMono.variable}`}>
       <body className="min-h-screen bg-[#f5f3f0] antialiased">
-        <TooltipProvider>
-          {children}
-          <Toaster position="top-center" />
-        </TooltipProvider>
+        {children}
+        <Toaster position="top-center" />
       </body>
     </html>
   );
