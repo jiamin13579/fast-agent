@@ -39,7 +39,9 @@
       "Bash(npm ls *)",
       "Bash(npm uninstall *)",
       "Bash(npx playwright *)",
-      "Bash(node *)"
+      "Bash(node *)",
+      "Bash(mvn spring-boot:run)",
+      "Bash(npm test *)"
     ]
   }
 }
