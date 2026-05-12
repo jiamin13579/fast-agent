@@ -1,3 +1,4 @@
+import "./globals.css";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import AppLayout from "@/components/layout";
 
