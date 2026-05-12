@@ -169,16 +169,18 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const [view, setView] = useState<View>("chat");
-  const hideSidebar = pathname === "/login";
+  const isLoginPage = pathname === "/login";
 
   return (
     <AppContext.Provider value={{ view, setView }}>
       <div className="flex h-screen">
-        {!hideSidebar && <Sidebar />}
+        {!isLoginPage && <Sidebar />}
         <div className="flex-1 flex flex-col">
-          <header className="h-14 bg-white border-b border-blue-100 flex items-center justify-end px-4">
-            <HeaderRight />
-          </header>
+          {!isLoginPage && (
+            <header className="h-14 bg-white border-b border-blue-100 flex items-center justify-end px-4">
+              <HeaderRight />
+            </header>
+          )}
           <main className="flex-1 h-screen overflow-hidden">{children}</main>
         </div>
       </div>
