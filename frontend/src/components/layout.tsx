@@ -132,7 +132,7 @@ export function HeaderRight() {
         onClick={() => setIsOpen(!isOpen)}
         className="flex items-center gap-2 px-4 py-2 rounded-lg hover:bg-blue-50 transition-colors"
       >
-        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center text-white text-sm font-medium">
+        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center text-white text-sm font-medium">
           {getInitials(user?.nickname || "")}
         </div>
         <span className="text-sm text-blue-700">{user?.nickname || "用户"}</span>
@@ -140,7 +140,7 @@ export function HeaderRight() {
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 top-full mt-2 w-56 bg-white rounded-lg shadow-lg border border-blue-100 py-2 z-50">
+        <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-lg shadow-lg border border-blue-100 py-2 z-50">
           <div className="px-4 py-2 border-b border-blue-50">
             <div className="font-medium text-blue-800">{user?.nickname}</div>
             <div className="text-xs text-blue-400">{user?.email}</div>
