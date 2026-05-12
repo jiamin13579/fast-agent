@@ -3,7 +3,7 @@
 import { createContext, useContext, useState, useEffect, useRef } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { MessageSquare, Sparkles, Clock, Key, Palette } from "lucide-react";
+import { MessageSquare, Sparkles, Clock, Key, Palette, LogOut } from "lucide-react";
 
 type View = "chat" | "skills" | "tasks" | "llm" | "preferences";
 
@@ -83,10 +83,12 @@ export function HeaderRight() {
   const router = useRouter();
 
   useEffect(() => {
+    const controller = new AbortController();
     const token = localStorage.getItem("auth_token");
     if (token) {
       fetch(`${process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8080/api"}/auth/me`, {
         headers: { Authorization: `Bearer ${token}` },
+        signal: controller.signal,
       })
         .then((res) => res.json())
         .then((data) => {
@@ -99,6 +101,7 @@ export function HeaderRight() {
     } else {
       setIsLoading(false);
     }
+    return () => controller.abort();
   }, []);
 
   useEffect(() => {
@@ -154,7 +157,7 @@ export function HeaderRight() {
             onClick={handleLogout}
             className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
           >
-            <span>🚪</span> 退出登录
+            <LogOut className="h-4 w-4" /> 退出登录
           </button>
         </div>
       )}
