@@ -1,8 +1,14 @@
 package com.fast.agent.entity;
 
+import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
+import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableName;
 import java.time.LocalDateTime;
 
+@TableName("`user`")
 public class User {
+    @TableId(type = IdType.AUTO)
     private Long id;
     private String email;
     private String phone;
@@ -10,8 +16,11 @@ public class User {
     private String password;
     private Role role;
     private Integer status;
+    @TableField("must_change_password")
     private Boolean mustChangePassword;
+    @TableField("create_time")
     private LocalDateTime createTime;
+    @TableField("update_time")
     private LocalDateTime updateTime;
 
     public Long getId() {

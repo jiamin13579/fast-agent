@@ -26,9 +26,16 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
         String action = (String) data.get("action");
 
         if ("send".equals(action)) {
-            Long chatId = ((Number) data.get("chat_id")).longValue();
+            Number conversationIdValue =
+                    (Number)
+                            (data.get("conversation_id") != null
+                                    ? data.get("conversation_id")
+                                    : data.get("chat_id"));
+            if (conversationIdValue == null) {
+                throw new IllegalArgumentException("conversation_id 不能为空");
+            }
             String content = (String) data.get("content");
-            String response = conversationService.generateResponse(chatId, content);
+            String response = conversationService.generateResponse(conversationIdValue.longValue(), content);
 
             session.sendMessage(
                     new TextMessage(

@@ -1,31 +1,24 @@
 package com.fast.agent.repository;
 
+import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.fast.agent.entity.Conversation;
 import java.util.List;
-import org.apache.ibatis.annotations.Delete;
-import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Mapper;
-import org.apache.ibatis.annotations.Options;
-import org.apache.ibatis.annotations.Select;
-import org.apache.ibatis.annotations.Update;
 
 @Mapper
-public interface ConversationMapper {
-    @Select("SELECT * FROM agent_chat WHERE id = #{id}")
-    Conversation findById(Long id);
+public interface ConversationMapper extends BaseMapper<Conversation> {
 
-    @Select("SELECT * FROM agent_chat ORDER BY created_at DESC")
-    List<Conversation> findAll();
+    default Conversation findById(Long id) {
+        return selectById(id);
+    }
 
-    @Insert("INSERT INTO agent_chat (name) VALUES (#{name})")
-    @Options(useGeneratedKeys = true, keyProperty = "id")
-    int insert(Conversation chat);
+    default List<Conversation> findAll() {
+        return selectList(
+                Wrappers.<Conversation>lambdaQuery().orderByDesc(Conversation::getCreatedAt));
+    }
 
-    @Update(
-            "UPDATE agent_chat SET session_id=#{sessionId}, name=#{name}, model=#{model}, "
-                    + "system_prompt=#{systemPrompt}, tools=#{tools}, config=#{config}, updated_at=#{updatedAt} WHERE id=#{id}")
-    int update(Conversation chat);
-
-    @Delete("DELETE FROM agent_chat WHERE id = #{id}")
-    int deleteById(Long id);
+    default int update(Conversation conversation) {
+        return updateById(conversation);
+    }
 }

@@ -9,32 +9,36 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/chat")
+@RequestMapping({"/api/conversation", "/api/chat"})
 public class ConversationController {
 
     @Autowired private ConversationService conversationService;
 
     @PostMapping("/send")
     public Map<String, Object> send(@RequestBody Map<String, Object> request) {
-        Number chatIdValue =
+        Number conversationIdValue =
                 (Number)
-                        (request.get("chat_id") != null
-                                ? request.get("chat_id")
-                                : request.get("chatId"));
+                        (request.get("conversation_id") != null
+                                ? request.get("conversation_id")
+                                : (request.get("conversationId") != null
+                                        ? request.get("conversationId")
+                                        : (request.get("chat_id") != null
+                                                ? request.get("chat_id")
+                                                : request.get("chatId"))));
         String content =
                 (String)
                         (request.get("content") != null
                                 ? request.get("content")
                                 : request.get("message"));
-        if (chatIdValue == null || content == null || content.isBlank()) {
-            throw new IllegalArgumentException("chat_id 和 content 不能为空");
+        if (conversationIdValue == null || content == null || content.isBlank()) {
+            throw new IllegalArgumentException("conversation_id 和 content 不能为空");
         }
-        return conversationService.send(chatIdValue.longValue(), content);
+        return conversationService.send(conversationIdValue.longValue(), content);
     }
 
-    @GetMapping("/history/{chatId}")
-    public List<ChatMessage> getHistory(@PathVariable Long chatId) {
-        return conversationService.getHistory(chatId);
+    @GetMapping("/history/{conversationId}")
+    public List<ChatMessage> getHistory(@PathVariable Long conversationId) {
+        return conversationService.getHistory(conversationId);
     }
 
     @PutMapping("/message/{messageId}/edit")
@@ -58,8 +62,8 @@ public class ConversationController {
         return conversationService.listConversations();
     }
 
-    @DeleteMapping("/delete/{chatId}")
-    public Map<String, Object> deleteConversation(@PathVariable Long chatId) {
-        return conversationService.deleteConversation(chatId);
+    @DeleteMapping("/delete/{conversationId}")
+    public Map<String, Object> deleteConversation(@PathVariable Long conversationId) {
+        return conversationService.deleteConversation(conversationId);
     }
 }

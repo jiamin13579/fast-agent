@@ -1,34 +1,30 @@
 package com.fast.agent.repository;
 
+import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.fast.agent.entity.Task;
 import java.util.List;
-import org.apache.ibatis.annotations.Delete;
-import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Mapper;
-import org.apache.ibatis.annotations.Select;
-import org.apache.ibatis.annotations.Update;
 
 @Mapper
-public interface TaskMapper {
-    @Select("SELECT * FROM agent_task WHERE id = #{id}")
-    Task findById(Long id);
+public interface TaskMapper extends BaseMapper<Task> {
 
-    @Select("SELECT * FROM agent_task ORDER BY created_at DESC")
-    List<Task> findAll();
+    default Task findById(Long id) {
+        return selectById(id);
+    }
 
-    @Select("SELECT * FROM agent_task WHERE status = #{status} ORDER BY created_at DESC")
-    List<Task> findByStatus(String status);
+    default List<Task> findAll() {
+        return selectList(Wrappers.<Task>lambdaQuery().orderByDesc(Task::getCreatedAt));
+    }
 
-    @Insert(
-            "INSERT INTO agent_task (name, description, status, result, error, skill_id, params, error_msg, created_at, updated_at) "
-                    + "VALUES (#{name}, #{description}, #{status}, #{result}, #{error}, #{skillId}, #{params}, #{errorMsg}, #{createdAt}, #{updatedAt})")
-    int insert(Task task);
+    default List<Task> findByStatus(String status) {
+        return selectList(
+                Wrappers.<Task>lambdaQuery()
+                        .eq(Task::getStatus, status)
+                        .orderByDesc(Task::getCreatedAt));
+    }
 
-    @Update(
-            "UPDATE agent_task SET name=#{name}, description=#{description}, status=#{status}, result=#{result}, "
-                    + "error=#{error}, skill_id=#{skillId}, params=#{params}, error_msg=#{errorMsg}, updated_at=#{updatedAt} WHERE id=#{id}")
-    int update(Task task);
-
-    @Delete("DELETE FROM agent_task WHERE id = #{id}")
-    int deleteById(Long id);
+    default int update(Task task) {
+        return updateById(task);
+    }
 }

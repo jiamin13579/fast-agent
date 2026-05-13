@@ -8,7 +8,7 @@ spring:
     password: Db@Adm123
     driver-class-name: com.mysql.cj.jdbc.Driver
 
-mybatis:
+mybatis-plus:
   configuration:
     map-underscore-to-camel-case: true
 

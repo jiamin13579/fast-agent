@@ -1,34 +1,32 @@
 package com.fast.agent.repository;
 
+import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.fast.agent.entity.KnowledgeSource;
 import java.util.List;
-import org.apache.ibatis.annotations.Delete;
-import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Mapper;
-import org.apache.ibatis.annotations.Select;
-import org.apache.ibatis.annotations.Update;
 
 @Mapper
-public interface KnowledgeSourceMapper {
-    @Select("SELECT * FROM agent_knowledge_source WHERE id = #{id}")
-    KnowledgeSource findById(Long id);
+public interface KnowledgeSourceMapper extends BaseMapper<KnowledgeSource> {
 
-    @Select("SELECT * FROM agent_knowledge_source ORDER BY created_at DESC")
-    List<KnowledgeSource> findAll();
+    default KnowledgeSource findById(Long id) {
+        return selectById(id);
+    }
 
-    @Select("SELECT * FROM agent_knowledge_source WHERE enabled = true ORDER BY created_at DESC")
-    List<KnowledgeSource> findEnabled();
+    default List<KnowledgeSource> findAll() {
+        return selectList(
+                Wrappers.<KnowledgeSource>lambdaQuery()
+                        .orderByDesc(KnowledgeSource::getCreatedAt));
+    }
 
-    @Insert(
-            "INSERT INTO agent_knowledge_source (name, type, config, enabled, created_at, updated_at) "
-                    + "VALUES (#{name}, #{type}, #{config}, #{enabled}, #{createdAt}, #{updatedAt})")
-    int insert(KnowledgeSource knowledgeSource);
+    default List<KnowledgeSource> findEnabled() {
+        return selectList(
+                Wrappers.<KnowledgeSource>lambdaQuery()
+                        .eq(KnowledgeSource::getEnabled, true)
+                        .orderByDesc(KnowledgeSource::getCreatedAt));
+    }
 
-    @Update(
-            "UPDATE agent_knowledge_source SET name=#{name}, type=#{type}, config=#{config}, enabled=#{enabled}, "
-                    + "updated_at=#{updatedAt} WHERE id=#{id}")
-    int update(KnowledgeSource knowledgeSource);
-
-    @Delete("DELETE FROM agent_knowledge_source WHERE id = #{id}")
-    int deleteById(Long id);
+    default int update(KnowledgeSource knowledgeSource) {
+        return updateById(knowledgeSource);
+    }
 }

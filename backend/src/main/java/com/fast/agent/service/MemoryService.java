@@ -19,7 +19,7 @@ public class MemoryService {
     private static final int MAX_CONTEXT_MESSAGES = 50;
 
     public List<Map<String, String>> getHistory(Long chatId) {
-        List<ChatMessage> messages = messageMapper.findByChatId(chatId);
+        List<ChatMessage> messages = messageMapper.findByConversationId(chatId);
 
         return messages.stream()
                 .map(m -> Map.of("role", m.getRole(), "content", m.getContent()))
@@ -34,14 +34,14 @@ public class MemoryService {
 
     public void saveMessage(Long chatId, String role, String content) {
         ChatMessage message = new ChatMessage();
-        message.setChatId(chatId);
+        message.setConversationId(chatId);
         message.setRole(role);
         message.setContent(content);
         messageMapper.insert(message);
     }
 
     public void clearHistory(Long chatId) {
-        List<ChatMessage> messages = messageMapper.findByChatId(chatId);
+        List<ChatMessage> messages = messageMapper.findByConversationId(chatId);
         for (ChatMessage m : messages) {
             messageMapper.deleteById(m.getId());
         }

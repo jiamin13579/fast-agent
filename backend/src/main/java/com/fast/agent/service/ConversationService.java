@@ -21,22 +21,22 @@ public class ConversationService {
 
     @Autowired private ChatMessageMapper chatMessageMapper;
 
-    public Map<String, Object> send(Long chatId, String content) {
-        Conversation chat = conversationMapper.findById(chatId);
+    public Map<String, Object> send(Long conversationId, String content) {
+        Conversation chat = conversationMapper.findById(conversationId);
         if (chat == null) {
-            throw new IllegalArgumentException("会话不存在: " + chatId);
+            throw new IllegalArgumentException("会话不存在: " + conversationId);
         }
 
-        String response = generateResponse(chatId, content);
+        String response = generateResponse(conversationId, content);
 
         ChatMessage userMsg = new ChatMessage();
-        userMsg.setChatId(chatId);
+        userMsg.setConversationId(conversationId);
         userMsg.setRole("user");
         userMsg.setContent(content);
         chatMessageMapper.insert(userMsg);
 
         ChatMessage assistantMsg = new ChatMessage();
-        assistantMsg.setChatId(chatId);
+        assistantMsg.setConversationId(conversationId);
         assistantMsg.setRole("assistant");
         assistantMsg.setContent(response);
         chatMessageMapper.insert(assistantMsg);
@@ -44,8 +44,8 @@ public class ConversationService {
         return Map.of("response", response);
     }
 
-    public String generateResponse(Long chatId, String content) {
-        List<Map<String, String>> history = memoryService.getHistory(chatId);
+    public String generateResponse(Long conversationId, String content) {
+        List<Map<String, String>> history = memoryService.getHistory(conversationId);
         try {
             return llmAgent.process(content, history);
         } catch (Exception e) {
@@ -53,8 +53,8 @@ public class ConversationService {
         }
     }
 
-    public List<ChatMessage> getHistory(Long chatId) {
-        return chatMessageMapper.findByChatId(chatId);
+    public List<ChatMessage> getHistory(Long conversationId) {
+        return chatMessageMapper.findByConversationId(conversationId);
     }
 
     public Map<String, Object> editMessage(Long messageId, String newContent) {
@@ -67,7 +67,7 @@ public class ConversationService {
             throw new IllegalArgumentException("只支持编辑用户消息");
         }
 
-        List<ChatMessage> historyMessages = chatMessageMapper.findByChatId(target.getChatId());
+        List<ChatMessage> historyMessages = chatMessageMapper.findByConversationId(target.getConversationId());
         int targetIndex = findMessageIndex(historyMessages, messageId);
         if (targetIndex < 0) {
             throw new IllegalArgumentException("消息不存在");
@@ -89,7 +89,7 @@ public class ConversationService {
             }
         }
 
-        List<Map<String, String>> historyBefore = memoryService.getHistory(target.getChatId());
+        List<Map<String, String>> historyBefore = memoryService.getHistory(target.getConversationId());
         if (!historyBefore.isEmpty()) {
             historyBefore = historyBefore.subList(0, Math.max(0, historyBefore.size() - 1));
         }
@@ -102,7 +102,7 @@ public class ConversationService {
         }
 
         ChatMessage assistantMsg = new ChatMessage();
-        assistantMsg.setChatId(target.getChatId());
+        assistantMsg.setConversationId(target.getConversationId());
         assistantMsg.setRole("assistant");
         assistantMsg.setContent(response);
         chatMessageMapper.insert(assistantMsg);
@@ -116,7 +116,7 @@ public class ConversationService {
             throw new IllegalArgumentException("只支持撤回用户消息");
         }
 
-        List<ChatMessage> historyMessages = chatMessageMapper.findByChatId(target.getChatId());
+        List<ChatMessage> historyMessages = chatMessageMapper.findByConversationId(target.getConversationId());
         int targetIndex = findMessageIndex(historyMessages, messageId);
         if (targetIndex < 0) {
             throw new IllegalArgumentException("消息不存在");
@@ -145,6 +145,8 @@ public class ConversationService {
         return Map.of(
                 "id",
                 conversation.getId(),
+                "conversation_id",
+                conversation.getId(),
                 "chat_id",
                 conversation.getId(),
                 "name",
@@ -155,9 +157,9 @@ public class ConversationService {
         return conversationMapper.findAll();
     }
 
-    public Map<String, Object> deleteConversation(Long chatId) {
-        chatMessageMapper.deleteByChatId(chatId);
-        int deleted = conversationMapper.deleteById(chatId);
+    public Map<String, Object> deleteConversation(Long conversationId) {
+        chatMessageMapper.deleteByConversationId(conversationId);
+        int deleted = conversationMapper.deleteById(conversationId);
         return Map.of("success", deleted > 0);
     }
 
