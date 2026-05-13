@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useApp } from "@/components/layout";
 import { clearAuth, getToken } from "@/lib/auth";
 import { API_BASE } from "@/lib/config";
+import { useWs } from "@/lib/ws";
 import { cn } from "@/lib/utils";
 import {
   Send,
@@ -12,8 +13,6 @@ import {
   MessageCircle,
   Trash2,
   Loader2,
-  Sparkles,
-  Clock,
   ChevronLeft,
   Menu,
   Pencil,
@@ -36,21 +35,21 @@ import {
 import { toast } from "sonner";
 
 interface Message {
-  id: number;
+  uuid: string;
   role: "user" | "assistant";
   content: string;
   createdAt?: Date;
 }
 
 interface ConversationItem {
-  id: number;
+  uuid: string;
   name: string;
   createdAt?: string;
   updatedAt?: string;
 }
 
 interface MessageDto {
-  id: number | string;
+  uuid: string;
   role: "user" | "assistant";
   content: string;
   createdAt?: string;
@@ -68,16 +67,48 @@ function buildAuthHeaders(includeJson = false): HeadersInit {
 function ConversationView() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
-  const [conversationId, setConversationId] = useState<number | null>(null);
+  const [conversationUuid, setConversationUuid] = useState<string | null>(null);
   const [conversations, setConversations] = useState<ConversationItem[]>([]);
   const [loading, setLoading] = useState(false);
-  const [editingMessageId, setEditingMessageId] = useState<number | null>(null);
+  const [editingMessageUuid, setEditingMessageUuid] = useState<string | null>(null);
   const [editingContent, setEditingContent] = useState("");
   const [actionLoading, setActionLoading] = useState(false);
   const [loadingConversations, setLoadingConversations] = useState(true);
   const [conversationListCollapsed, setConversationListCollapsed] = useState(false);
+  const [editingConversationUuid, setEditingConversationUuid] = useState<string | null>(null);
+  const [editingConversationName, setEditingConversationName] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  const handleWsMessage = useCallback((data: Record<string, unknown>) => {
+    const type = data.type as string;
+    if (type === "start") {
+      //已开始，等chunk累积
+    } else if (type === "chunk") {
+      const content = data.content as string;
+      const clientMsgId = data.client_msg_id as string;
+      setMessages((prev) => {
+        const last = prev[prev.length - 1];
+        if (last && last.uuid === clientMsgId) {
+          return [...prev.slice(0, -1), { ...last, content: last.content + content }];
+        }
+        return [...prev, { uuid: String(Date.now()), role: "assistant" as const, content }];
+      });
+    } else if (type === "done") {
+      setLoading(false);
+    } else if (type === "error") {
+      setMessages((prev) => {
+        const last = prev[prev.length - 1];
+        if (last) {
+          return [...prev.slice(0, -1), { ...last, content: last.content + "\n[错误] " + data.message }];
+        }
+        return prev;
+      });
+      setLoading(false);
+    }
+  }, []);
+
+  const { send } = useWs(handleWsMessage);
 
   useEffect(() => {
     scrollToBottom();
@@ -89,18 +120,18 @@ function ConversationView() {
     }
   };
 
-  const selectConversation = useCallback(async (id: number) => {
-    setConversationId(id);
+  const selectConversation = useCallback(async (uuid: string) => {
+    setConversationUuid(uuid);
     setMessages([]);
     try {
-      const res = await fetch(`${API_BASE}/conversation/history/${id}`, {
+      const res = await fetch(`${API_BASE}/conversation/history/${uuid}`, {
         headers: buildAuthHeaders(),
       });
       if (!res.ok) throw new Error("加载历史失败");
       const data: MessageDto[] = await res.json();
       setMessages(
         data.map((m) => ({
-          id: Number(m.id),
+          uuid: m.uuid,
           role: m.role,
           content: m.content,
           createdAt: m.createdAt ? new Date(m.createdAt) : undefined,
@@ -126,7 +157,7 @@ function ConversationView() {
       const data = await res.json();
       setConversations(data);
       if (data.length > 0) {
-        await selectConversation(data[0].id);
+        await selectConversation(data[0].uuid);
       }
     } catch {
       toast.error("加载会话失败");
@@ -148,31 +179,27 @@ function ConversationView() {
       });
       if (!res.ok) throw new Error("创建失败");
       const conversation = await res.json();
-      const normalizedConversation = {
-        ...conversation,
-        id: conversation.id ?? conversation.conversation_id,
-      };
-      setConversations([...conversations, normalizedConversation]);
-      selectConversation(normalizedConversation.id);
+      setConversations((prev) => [...prev, conversation]);
+      selectConversation(conversation.uuid);
     } catch {
       toast.error("创建失败");
     }
   };
 
-  const deleteConversation = async (e: React.MouseEvent, conversationIdToDelete: number) => {
+  const deleteConversation = async (e: React.MouseEvent, conversationUuidToDelete: string) => {
     e.stopPropagation();
     try {
-      const res = await fetch(`${API_BASE}/conversation/delete/${conversationIdToDelete}`, {
+      const res = await fetch(`${API_BASE}/conversation/delete/${conversationUuidToDelete}`, {
         method: "DELETE",
         headers: buildAuthHeaders(),
       });
       if (!res.ok) throw new Error("删除失败");
-      const newConversations = conversations.filter((c) => c.id !== conversationIdToDelete);
+      const newConversations = conversations.filter((c) => c.uuid !== conversationUuidToDelete);
       setConversations(newConversations);
-      if (conversationId === conversationIdToDelete && newConversations.length > 0) {
-        selectConversation(newConversations[0].id);
+      if (conversationUuid === conversationUuidToDelete && newConversations.length > 0) {
+        selectConversation(newConversations[0].uuid);
       } else if (newConversations.length === 0) {
-        setConversationId(null);
+        setConversationUuid(null);
         setMessages([]);
       }
     } catch {
@@ -180,8 +207,36 @@ function ConversationView() {
     }
   };
 
+  const startRenameConversation = (e: React.MouseEvent, conv: ConversationItem) => {
+    e.stopPropagation();
+    setEditingConversationUuid(conv.uuid);
+    setEditingConversationName(conv.name);
+  };
+
+  const saveRenameConversation = async () => {
+    if (!editingConversationUuid || !editingConversationName.trim()) return;
+    try {
+      const res = await fetch(`${API_BASE}/conversation/rename/${editingConversationUuid}`, {
+        method: "PUT",
+        headers: buildAuthHeaders(true),
+        body: JSON.stringify({ name: editingConversationName.trim() }),
+      });
+      if (!res.ok) throw new Error("重命名失败");
+      setConversations((prev) =>
+        prev.map((c) =>
+          c.uuid === editingConversationUuid ? { ...c, name: editingConversationName.trim() } : c
+        )
+      );
+      setEditingConversationUuid(null);
+      setEditingConversationName("");
+      toast.success("已重命名");
+    } catch {
+      toast.error("重命名失败");
+    }
+  };
+
   const sendMessage = async () => {
-    if (!input.trim() || !conversationId) return;
+    if (!input.trim() || !conversationUuid) return;
 
     const textToSend = input;
     setInput("");
@@ -191,24 +246,19 @@ function ConversationView() {
       textareaRef.current.style.height = "auto";
     }
 
-    try {
-      const res = await fetch(`${API_BASE}/conversation/send`, {
-        method: "POST",
-        headers: buildAuthHeaders(true),
-        body: JSON.stringify({ conversation_id: conversationId, content: textToSend }),
-      });
-      if (!res.ok) throw new Error("发送失败");
-      await selectConversation(conversationId);
-    } catch (e) {
-      const errorMessage: Message = {
-        id: -Date.now(),
-        role: "assistant",
-        content: "发送失败: " + (e as Error).message,
-      };
-      setMessages((prev) => [...prev, errorMessage]);
-    } finally {
-      setLoading(false);
-    }
+    const clientMsgId = String(Date.now());
+    const placeholderId = clientMsgId;
+    setMessages((prev) => [
+      ...prev,
+      { uuid: placeholderId, role: "assistant", content: "" },
+    ]);
+
+    send({
+      action: "send",
+      conversation_uuid: conversationUuid,
+      content: textToSend,
+      client_msg_id: clientMsgId,
+    });
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -228,28 +278,28 @@ function ConversationView() {
 
   const formatTime = (date?: Date) => {
     if (!date) return "";
-    return date.toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit" });
+    return date.toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
   };
 
-  const getLastUserMessageId = () => {
+  const getLastUserMessageUuid = () => {
     for (let i = messages.length - 1; i >= 0; i--) {
-      if (messages[i].role === "user") return messages[i].id;
+      if (messages[i].role === "user") return messages[i].uuid;
     }
     return null;
   };
 
-  const lastUserMessageId = getLastUserMessageId();
+  const lastUserMessageUuid = getLastUserMessageUuid();
 
-  const recallMessage = async (messageId: number) => {
-    if (!conversationId) return;
+  const recallMessage = async (messageUuid: string) => {
+    if (!conversationUuid) return;
     setActionLoading(true);
     try {
-      const res = await fetch(`${API_BASE}/conversation/message/${messageId}/recall`, {
+      const res = await fetch(`${API_BASE}/conversation/message/${messageUuid}/recall`, {
         method: "DELETE",
         headers: buildAuthHeaders(),
       });
       if (!res.ok) throw new Error("撤回失败");
-      await selectConversation(conversationId);
+      await selectConversation(conversationUuid);
       toast.success("已撤回");
     } catch (e) {
       toast.error((e as Error).message || "撤回失败");
@@ -258,19 +308,19 @@ function ConversationView() {
     }
   };
 
-  const saveEditMessage = async (messageId: number) => {
-    if (!conversationId || !editingContent.trim()) return;
+  const saveEditMessage = async (messageUuid: string) => {
+    if (!conversationUuid || !editingContent.trim()) return;
     setActionLoading(true);
     try {
-      const res = await fetch(`${API_BASE}/conversation/message/${messageId}/edit`, {
+      const res = await fetch(`${API_BASE}/conversation/message/${messageUuid}/edit`, {
         method: "PUT",
         headers: buildAuthHeaders(true),
         body: JSON.stringify({ content: editingContent.trim() }),
       });
       if (!res.ok) throw new Error("编辑失败");
-      setEditingMessageId(null);
+      setEditingMessageUuid(null);
       setEditingContent("");
-      await selectConversation(conversationId);
+      await selectConversation(conversationUuid);
       toast.success("已更新");
     } catch (e) {
       toast.error((e as Error).message || "编辑失败");
@@ -315,37 +365,89 @@ function ConversationView() {
             ) : (
               conversations.map((conversation) => (
                 <div
-                  key={conversation.id}
-                  onClick={() => selectConversation(conversation.id)}
+                  key={conversation.uuid}
+                  onClick={() => selectConversation(conversation.uuid)}
                   className={cn(
                     "group relative w-full text-left px-3 py-2.5 rounded-lg text-sm transition-all duration-200 cursor-pointer",
-                    conversationId === conversation.id
+                    conversationUuid === conversation.uuid
                       ? "bg-blue-50 border border-blue-200"
                       : "hover:bg-blue-50/50 border border-transparent"
                   )}
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex-1 min-w-0">
-                      <p
-                        className={cn(
-                          "font-medium truncate text-sm",
-                          conversationId === conversation.id ? "text-blue-700" : "text-blue-600"
-                        )}
-                      >
-                        {conversation.name}
-                      </p>
-                      {conversation.updatedAt && (
-                        <p className="text-xs text-blue-400/60 mt-0.5">
-                          {new Date(conversation.updatedAt).toLocaleDateString("zh-CN")}
-                        </p>
+                      {editingConversationUuid === conversation.uuid ? (
+                        <div className="flex flex-col gap-1">
+                          <Input
+                            value={editingConversationName}
+                            onChange={(e) => setEditingConversationName(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") saveRenameConversation();
+                              if (e.key === "Escape") {
+                                setEditingConversationUuid(null);
+                                setEditingConversationName("");
+                              }
+                            }}
+                            className="h-7 text-xs px-2 py-1 bg-white"
+                            autoFocus
+                          />
+                          <div className="flex gap-1">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                saveRenameConversation();
+                              }}
+                              className="text-[10px] text-blue-500 hover:text-blue-700"
+                            >
+                              保存
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setEditingConversationUuid(null);
+                                setEditingConversationName("");
+                              }}
+                              className="text-[10px] text-blue-400/60 hover:text-blue-600"
+                            >
+                              取消
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <>
+                          <p
+                            className={cn(
+                              "font-medium truncate text-sm",
+                              conversationUuid === conversation.uuid ? "text-blue-700" : "text-blue-600"
+                            )}
+                          >
+                            {conversation.name}
+                          </p>
+                          {conversation.updatedAt && (
+                            <p className="text-xs text-blue-400/60 mt-0.5">
+                              {new Date(conversation.updatedAt).toLocaleString("zh-CN")}
+                            </p>
+                          )}
+                        </>
                       )}
                     </div>
-                    <button
-                      onClick={(e) => deleteConversation(e, conversation.id)}
-                      className="opacity-0 group-hover:opacity-100 p-1.5 rounded-md hover:bg-red-50 text-blue-400/60 hover:text-red-500 transition-all"
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </button>
+                    {!editingConversationUuid && (
+                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button
+                          onClick={(e) => startRenameConversation(e, conversation)}
+                          className="p-1.5 rounded-md hover:bg-blue-100 text-blue-400/60 hover:text-blue-600 transition-all"
+                          title="重命名"
+                        >
+                          <Pencil className="h-3 w-3" />
+                        </button>
+                        <button
+                          onClick={(e) => deleteConversation(e, conversation.uuid)}
+                          className="p-1.5 rounded-md hover:bg-red-50 text-blue-400/60 hover:text-red-500 transition-all"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </div>
               ))
@@ -373,7 +475,7 @@ function ConversationView() {
             MiniMax-M2.7
           </Badge>
           <h2 className="font-medium text-blue-500 text-sm">
-            {conversations.find((c) => c.id === conversationId)?.name || "选择对话"}
+            {conversations.find((c) => c.uuid === conversationUuid)?.name || "选择对话"}
           </h2>
         </header>
 
@@ -395,7 +497,7 @@ function ConversationView() {
             <div className="space-y-6">
               {messages.map((message) => (
                 <div
-                  key={message.id}
+                  key={message.uuid}
                   className={cn(
                     "flex gap-4 animate-in fade-in slide-in-from-bottom-2 duration-300",
                     message.role === "user" && "flex-row-reverse"
@@ -428,7 +530,7 @@ function ConversationView() {
                           : "bg-white text-blue-700 rounded-bl-md border border-blue-100"
                       )}
                     >
-                      {editingMessageId === message.id ? (
+                      {editingMessageUuid === message.uuid ? (
                         <div className="space-y-2">
                           <textarea
                             value={editingContent}
@@ -440,7 +542,7 @@ function ConversationView() {
                               size="sm"
                               variant="secondary"
                               onClick={() => {
-                                setEditingMessageId(null);
+                                setEditingMessageUuid(null);
                                 setEditingContent("");
                               }}
                             >
@@ -448,7 +550,7 @@ function ConversationView() {
                             </Button>
                             <Button
                               size="sm"
-                              onClick={() => saveEditMessage(message.id)}
+                              onClick={() => saveEditMessage(message.uuid)}
                               disabled={actionLoading || !editingContent.trim()}
                             >
                               保存
@@ -460,12 +562,12 @@ function ConversationView() {
                       )}
                     </div>
                     {message.role === "user" &&
-                      message.id === lastUserMessageId &&
-                      editingMessageId !== message.id && (
+                      message.uuid === lastUserMessageUuid &&
+                      editingMessageUuid !== message.uuid && (
                         <div className="flex items-center gap-2 mt-1.5">
                           <button
                             onClick={() => {
-                              setEditingMessageId(message.id);
+                              setEditingMessageUuid(message.uuid);
                               setEditingContent(message.content);
                             }}
                             className="text-[10px] text-blue-400/80 hover:text-blue-600 transition-colors inline-flex items-center gap-1"
@@ -475,7 +577,7 @@ function ConversationView() {
                             编辑
                           </button>
                           <button
-                            onClick={() => recallMessage(message.id)}
+                            onClick={() => recallMessage(message.uuid)}
                             className="text-[10px] text-blue-400/80 hover:text-red-500 transition-colors inline-flex items-center gap-1"
                             disabled={actionLoading || loading}
                           >
@@ -531,7 +633,7 @@ function ConversationView() {
                 onKeyDown={handleKeyDown}
                 placeholder="输入消息... (Shift + Enter 换行)"
                 className="w-full px-5 py-4 pr-14 resize-none bg-transparent rounded-2xl text-sm text-blue-700 placeholder:text-blue-400/60 focus:outline-none max-h-32"
-                disabled={!conversationId}
+                disabled={!conversationUuid}
                 rows={1}
               />
               <div className="absolute right-3 bottom-3 flex items-center gap-2">
@@ -540,7 +642,7 @@ function ConversationView() {
                 </span>
                 <Button
                   onClick={sendMessage}
-                  disabled={!input.trim() || !conversationId || loading}
+                  disabled={!input.trim() || !conversationUuid || loading}
                   size="icon"
                   className="h-9 w-9 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 shadow-lg shadow-blue-200 disabled:shadow-none transition-all"
                 >
@@ -563,9 +665,6 @@ function SettingsView() {
   const { view } = useApp();
   const [saving, setSaving] = useState(false);
   const [formData, setFormData] = useState({
-    llmProvider: "MiniMax-M2.7",
-    llmApiKey: "",
-    llmBaseUrl: "https://api.minimax.chat",
     theme: "light",
     notifications: true,
     soundEnabled: true,
@@ -581,117 +680,6 @@ function SettingsView() {
   return (
     <div className="flex-1 overflow-auto bg-blue-50/50 min-h-0">
       <div className="max-w-3xl mx-auto p-8">
-        {/* Skills */}
-        {view === "skills" && (
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-blue-600 font-medium text-sm">技能管理</h3>
-                <p className="text-blue-400/60 text-xs mt-1">管理系统技能</p>
-              </div>
-              <Button
-                size="sm"
-                className="bg-blue-500 hover:bg-blue-600 text-white rounded-lg border border-blue-400 text-xs shadow-sm"
-              >
-                <Plus className="h-3 w-3 mr-1.5" />
-                添加
-              </Button>
-            </div>
-            <Card className="bg-white border border-blue-100 rounded-lg p-6 text-center shadow-sm">
-              <Sparkles className="h-6 w-6 mx-auto mb-2 text-blue-300" />
-              <p className="text-blue-400/50 text-xs">暂无技能</p>
-            </Card>
-          </div>
-        )}
-
-        {/* Tasks */}
-        {view === "tasks" && (
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-blue-600 font-medium text-sm">定时任务</h3>
-                <p className="text-blue-400/60 text-xs mt-1">管理定时执行的任务</p>
-              </div>
-              <Button
-                size="sm"
-                className="bg-blue-500 hover:bg-blue-600 text-white rounded-lg border border-blue-400 text-xs shadow-sm"
-              >
-                <Plus className="h-3 w-3 mr-1.5" />
-                添加
-              </Button>
-            </div>
-            <Card className="bg-white border border-blue-100 rounded-lg p-6 text-center shadow-sm">
-              <Clock className="h-6 w-6 mx-auto mb-2 text-blue-300" />
-              <p className="text-blue-400/50 text-xs">暂无定时任务</p>
-            </Card>
-          </div>
-        )}
-
-        {/* LLM */}
-        {view === "llm" && (
-          <div className="space-y-4">
-            <h3 className="text-blue-600 font-medium text-sm">LLM 配置</h3>
-            <Card className="bg-white border border-blue-100 rounded-lg p-4 space-y-3 shadow-sm">
-              <div>
-                <label className="text-xs text-blue-500/70 mb-1 block uppercase tracking-wide">
-                  模型
-                </label>
-                <Select
-                  value={formData.llmProvider}
-                  onValueChange={(v) => setFormData({ ...formData, llmProvider: v || "" })}
-                >
-                  <SelectTrigger className="bg-blue-50 border-blue-200 text-blue-600 rounded-lg h-9 text-sm">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent className="bg-white border-blue-200">
-                    <SelectItem value="MiniMax-M2.7">MiniMax-M2.7</SelectItem>
-                    <SelectItem value="GPT-4">GPT-4</SelectItem>
-                    <SelectItem value="Claude-3">Claude-3</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <label className="text-xs text-blue-500/70 mb-1 block uppercase tracking-wide">
-                  API Key
-                </label>
-                <Input
-                  type="password"
-                  value={formData.llmApiKey}
-                  onChange={(e) => setFormData({ ...formData, llmApiKey: e.target.value })}
-                  placeholder="sk-..."
-                  className="bg-blue-50 border-blue-200 text-blue-600 rounded-lg h-9 text-sm"
-                />
-              </div>
-              <div>
-                <label className="text-xs text-blue-500/70 mb-1 block uppercase tracking-wide">
-                  Base URL
-                </label>
-                <Input
-                  value={formData.llmBaseUrl}
-                  onChange={(e) => setFormData({ ...formData, llmBaseUrl: e.target.value })}
-                  placeholder="https://api.minimax.chat"
-                  className="bg-blue-50 border-blue-200 text-blue-600 rounded-lg h-9 text-sm"
-                />
-              </div>
-              <Button
-                onClick={handleSave}
-                disabled={saving}
-                size="sm"
-                className="w-full bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-medium h-9 shadow-sm"
-              >
-                {saving ? (
-                  <>
-                    <Loader2 className="h-3 w-3 mr-1.5 animate-spin" />
-                    保存中...
-                  </>
-                ) : (
-                  "保存"
-                )}
-              </Button>
-            </Card>
-          </div>
-        )}
-
         {/* Preferences */}
         {view === "preferences" && (
           <div className="space-y-4">

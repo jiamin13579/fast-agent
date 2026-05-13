@@ -3,7 +3,7 @@
 import { createContext, useContext, useState, useEffect, useRef } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { MessageSquare, Sparkles, Clock, Key, Palette, LogOut } from "lucide-react";
+import { MessageSquare, Palette, LogOut, Sparkles } from "lucide-react";
 
 type View = "conversation" | "skills" | "tasks" | "llm" | "preferences";
 
@@ -21,9 +21,6 @@ export const useApp = () => useContext(AppContext);
 
 const navItems = [
   { id: "conversation" as View, icon: MessageSquare, label: "对话" },
-  { id: "skills" as View, icon: Sparkles, label: "技能" },
-  { id: "tasks" as View, icon: Clock, label: "任务" },
-  { id: "llm" as View, icon: Key, label: "LLM" },
   { id: "preferences" as View, icon: Palette, label: "偏好" },
 ];
 
@@ -115,9 +112,8 @@ export function HeaderRight() {
   }, []);
 
   const handleLogout = () => {
-    localStorage.removeItem("auth_token");
-    localStorage.removeItem("auth_user");
-    router.push("/login");
+    clearAuth();
+    window.location.href = "/login";
   };
 
   if (isLoading) {

@@ -18,41 +18,30 @@ public class ConversationController {
 
     @PostMapping("/send")
     public Map<String, Object> send(@RequestBody Map<String, Object> request) {
-        Number conversationIdValue = extractConversationId(request);
+        String conversationUuid = extractConversationUuid(request);
         String content =
                 (String)
                         (request.get("content") != null
                                 ? request.get("content")
                                 : request.get("message"));
-        if (conversationIdValue == null || content == null || content.isBlank()) {
+        if (conversationUuid == null || content == null || content.isBlank()) {
             throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST, "conversation_id 和 content 不能为空");
+                    HttpStatus.BAD_REQUEST, "conversation_uuid 和 content 不能为空");
         }
-        return conversationService.send(conversationIdValue.longValue(), content);
+        return conversationService.send(conversationUuid, content);
     }
 
-    private Number extractConversationId(Map<String, Object> request) {
+    private String extractConversationUuid(Map<String, Object> request) {
         Object value =
-                request.get("conversation_id") != null
-                        ? request.get("conversation_id")
-                        : request.get("conversationId");
-        return value instanceof Number ? (Number) value : null;
+                request.get("conversation_uuid") != null
+                        ? request.get("conversation_uuid")
+                        : request.get("conversationUuid");
+        return value instanceof String ? (String) value : null;
     }
 
-    @GetMapping("/history/{conversationId}")
-    public List<ChatMessage> getHistory(@PathVariable Long conversationId) {
-        return conversationService.getHistory(conversationId);
-    }
-
-    @PutMapping("/message/{messageId}/edit")
-    public Map<String, Object> editMessage(
-            @PathVariable Long messageId, @RequestBody Map<String, String> request) {
-        return conversationService.editMessage(messageId, request.get("content"));
-    }
-
-    @DeleteMapping("/message/{messageId}/recall")
-    public Map<String, Object> recallMessage(@PathVariable Long messageId) {
-        return conversationService.recallMessage(messageId);
+    @GetMapping("/history/{conversationUuid}")
+    public List<ChatMessage> getHistory(@PathVariable String conversationUuid) {
+        return conversationService.getHistory(conversationUuid);
     }
 
     @PostMapping("/create")
@@ -65,8 +54,14 @@ public class ConversationController {
         return conversationService.listConversations();
     }
 
-    @DeleteMapping("/delete/{conversationId}")
-    public Map<String, Object> deleteConversation(@PathVariable Long conversationId) {
-        return conversationService.deleteConversation(conversationId);
+    @DeleteMapping("/delete/{conversationUuid}")
+    public Map<String, Object> deleteConversation(@PathVariable String conversationUuid) {
+        return conversationService.deleteConversation(conversationUuid);
+    }
+
+    @PutMapping("/rename/{conversationUuid}")
+    public Map<String, Object> renameConversation(
+            @PathVariable String conversationUuid, @RequestBody Map<String, String> request) {
+        return conversationService.renameConversation(conversationUuid, request.get("name"));
     }
 }

@@ -1,6 +1,5 @@
 package com.fast.agent.engine;
 
-import com.fast.agent.engine.LLMClient;
 import com.fast.agent.engine.LLMResponse;
 import com.fast.agent.engine.tools.ToolDefinition;
 import com.fast.agent.engine.tools.ToolRegistry;
@@ -15,13 +14,13 @@ public class LLMAgent {
 
     @Autowired private ToolRegistry toolRegistry;
 
-    private static final int MAX_LOOPS = 10;
+    private static final int MAX_LOPS = 10;
 
     public String process(String userMessage, List<Map<String, String>> history) {
         List<Map<String, String>> messages = new ArrayList<>(history);
         messages.add(Map.of("role", "user", "content", userMessage));
 
-        for (int i = 0; i < MAX_LOOPS; i++) {
+        for (int i = 0; i < MAX_LOPS; i++) {
             LLMResponse response = llmAdapter.chat(messages);
 
             if (response.getToolCalls() == null || response.getToolCalls().isEmpty()) {
@@ -40,12 +39,15 @@ public class LLMAgent {
         return "已达到最大循环次数";
     }
 
+    public String processStream(String userMessage, List<Map<String, String>> history) {
+        return process(userMessage, history);
+    }
+
     private String executeTool(String name, String args) {
         ToolDefinition tool = toolRegistry.getTool(name);
         if (tool == null) return "Tool not found: " + name;
 
         try {
-            // Parse args JSON to Map
             Map<String, Object> params = parseArgs(args);
             return toolRegistry.executeTool(name, params);
         } catch (Exception e) {
