@@ -30,11 +30,7 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
                     (Number)
                             (data.get("conversation_id") != null
                                     ? data.get("conversation_id")
-                                    : (data.get("conversationId") != null
-                                            ? data.get("conversationId")
-                                            : (data.get("chat_id") != null
-                                                    ? data.get("chat_id")
-                                                    : data.get("chatId"))));
+                                    : data.get("conversationId"));
             if (conversationIdValue == null) {
                 throw new IllegalArgumentException("conversation_id 不能为空");
             }

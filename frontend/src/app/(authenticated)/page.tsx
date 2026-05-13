@@ -145,7 +145,7 @@ function ChatView() {
       const chat = await res.json();
       const normalizedChat = {
         ...chat,
-        id: chat.id ?? chat.conversation_id ?? chat.chat_id,
+        id: chat.id ?? chat.conversation_id,
       };
       setChats([...chats, normalizedChat]);
       selectChat(normalizedChat.id);

@@ -6,10 +6,12 @@ import com.fast.agent.service.ConversationService;
 import java.util.List;
 import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 @RestController
-@RequestMapping({"/api/conversation", "/api/chat"})
+@RequestMapping("/api/conversation")
 public class ConversationController {
 
     @Autowired private ConversationService conversationService;
@@ -23,7 +25,8 @@ public class ConversationController {
                                 ? request.get("content")
                                 : request.get("message"));
         if (conversationIdValue == null || content == null || content.isBlank()) {
-            throw new IllegalArgumentException("conversation_id 和 content 不能为空");
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST, "conversation_id 和 content 不能为空");
         }
         return conversationService.send(conversationIdValue.longValue(), content);
     }
@@ -32,11 +35,7 @@ public class ConversationController {
         Object value =
                 request.get("conversation_id") != null
                         ? request.get("conversation_id")
-                        : (request.get("conversationId") != null
-                                ? request.get("conversationId")
-                                : (request.get("chat_id") != null
-                                        ? request.get("chat_id")
-                                        : request.get("chatId")));
+                        : request.get("conversationId");
         return value instanceof Number ? (Number) value : null;
     }
 
