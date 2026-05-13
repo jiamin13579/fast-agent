@@ -79,7 +79,7 @@ rest/ → service/ → repository/
 
 | 原路径 | 新路径 |
 |---|---|
-| `core/chat/ChatWebSocketHandler.java` | `ws/ChatWebSocketHandler.java` |
+| `core/chat/ChatWebSocketHandler.java` | `ws/ConversationWebSocketHandler.java` |
 | `core/chat/WebSocketConfig.java` | `config/WebSocketConfig.java` |
 
 ### Service
@@ -142,7 +142,7 @@ rest/ → service/ → repository/
 2. **迁移所有 Entity** — 添加 `@TableName` 注解指向新表名，重命名 Chat→Conversation、Message→ChatMessage
 3. **改造所有 Mapper** — 继承 `BaseMapper<T>`，删除所有 SQL 注解
 4. **迁移 REST Controller** — 统一到 `rest/`，ChatController → ConversationController
-5. **迁移 WebSocket** — `ws/ChatWebSocketHandler`、`config/WebSocketConfig`
+5. **迁移 WebSocket** — `ws/ConversationWebSocketHandler`、`config/WebSocketConfig`
 6. **迁移并新建 Service** — MemoryService 移入 `service/`，新建 `ConversationService`
 7. **迁移 Engine 组件** — 统一到 `engine/`
 8. **更新所有 import 语句**
@@ -157,3 +157,4 @@ rest/ → service/ → repository/
 5. 创建会话响应默认输出 `id + conversation_id`，不再继续扩散 `chat_id` 新输出。
 6. 前端调用已切换到 `/api/conversation/*` 与 `conversation_id`。
 7. 对旧路径请求返回 `404`，对旧字段请求返回 `400`，避免隐式兼容导致行为漂移。
+8. WebSocket 入口统一为 `/ws/conversation`，旧入口 `/ws/chat` 已移除。

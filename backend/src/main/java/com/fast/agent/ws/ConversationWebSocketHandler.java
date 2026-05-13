@@ -8,14 +8,13 @@ import org.springframework.web.socket.*;
 import org.springframework.web.socket.handler.TextWebSocketHandler;
 
 @Component
-public class ChatWebSocketHandler extends TextWebSocketHandler {
+public class ConversationWebSocketHandler extends TextWebSocketHandler {
 
     private final ConversationService conversationService;
 
-    private final Map<String, Long> sessionChatMap = new HashMap<>();
     private final ObjectMapper objectMapper = new ObjectMapper();
 
-    public ChatWebSocketHandler(ConversationService conversationService) {
+    public ConversationWebSocketHandler(ConversationService conversationService) {
         this.conversationService = conversationService;
     }
 

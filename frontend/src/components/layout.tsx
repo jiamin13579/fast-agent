@@ -5,7 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { MessageSquare, Sparkles, Clock, Key, Palette, LogOut } from "lucide-react";
 
-type View = "chat" | "skills" | "tasks" | "llm" | "preferences";
+type View = "conversation" | "skills" | "tasks" | "llm" | "preferences";
 
 interface AppContextType {
   view: View;
@@ -13,14 +13,14 @@ interface AppContextType {
 }
 
 const AppContext = createContext<AppContextType>({
-  view: "chat",
+  view: "conversation",
   setView: () => {},
 });
 
 export const useApp = () => useContext(AppContext);
 
 const navItems = [
-  { id: "chat" as View, icon: MessageSquare, label: "对话" },
+  { id: "conversation" as View, icon: MessageSquare, label: "对话" },
   { id: "skills" as View, icon: Sparkles, label: "技能" },
   { id: "tasks" as View, icon: Clock, label: "任务" },
   { id: "llm" as View, icon: Key, label: "LLM" },
@@ -167,8 +167,7 @@ export function HeaderRight() {
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const router = useRouter();
-  const [view, setView] = useState<View>("chat");
+  const [view, setView] = useState<View>("conversation");
   const isLoginPage = pathname === "/login";
 
   if (isLoginPage) {

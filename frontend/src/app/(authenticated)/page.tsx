@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useApp } from "@/components/layout";
 import { clearAuth, getToken } from "@/lib/auth";
@@ -14,8 +14,6 @@ import {
   Loader2,
   Sparkles,
   Clock,
-  Key,
-  Palette,
   ChevronLeft,
   Menu,
   Pencil,
@@ -44,11 +42,18 @@ interface Message {
   createdAt?: Date;
 }
 
-interface Chat {
+interface ConversationItem {
   id: number;
   name: string;
   createdAt?: string;
   updatedAt?: string;
+}
+
+interface MessageDto {
+  id: number | string;
+  role: "user" | "assistant";
+  content: string;
+  createdAt?: string;
 }
 
 function buildAuthHeaders(includeJson = false): HeadersInit {
@@ -59,24 +64,20 @@ function buildAuthHeaders(includeJson = false): HeadersInit {
   return headers;
 }
 
-// ============ CHAT VIEW ============
-function ChatView() {
+// ============ CONVERSATION VIEW ============
+function ConversationView() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
-  const [chatId, setChatId] = useState<number | null>(null);
-  const [chats, setChats] = useState<Chat[]>([]);
+  const [conversationId, setConversationId] = useState<number | null>(null);
+  const [conversations, setConversations] = useState<ConversationItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [editingMessageId, setEditingMessageId] = useState<number | null>(null);
   const [editingContent, setEditingContent] = useState("");
   const [actionLoading, setActionLoading] = useState(false);
-  const [loadingChats, setLoadingChats] = useState(true);
-  const [chatListCollapsed, setChatListCollapsed] = useState(false);
+  const [loadingConversations, setLoadingConversations] = useState(true);
+  const [conversationListCollapsed, setConversationListCollapsed] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-
-  useEffect(() => {
-    loadChats();
-  }, []);
 
   useEffect(() => {
     scrollToBottom();
@@ -88,8 +89,30 @@ function ChatView() {
     }
   };
 
-  const loadChats = async () => {
-    setLoadingChats(true);
+  const selectConversation = useCallback(async (id: number) => {
+    setConversationId(id);
+    setMessages([]);
+    try {
+      const res = await fetch(`${API_BASE}/conversation/history/${id}`, {
+        headers: buildAuthHeaders(),
+      });
+      if (!res.ok) throw new Error("加载历史失败");
+      const data: MessageDto[] = await res.json();
+      setMessages(
+        data.map((m) => ({
+          id: Number(m.id),
+          role: m.role,
+          content: m.content,
+          createdAt: m.createdAt ? new Date(m.createdAt) : undefined,
+        }))
+      );
+    } catch (e) {
+      console.error("Failed to load history:", e);
+    }
+  }, []);
+
+  const loadConversations = useCallback(async () => {
+    setLoadingConversations(true);
     try {
       const res = await fetch(`${API_BASE}/conversation/list`, {
         headers: buildAuthHeaders(),
@@ -101,40 +124,22 @@ function ChatView() {
       }
       if (!res.ok) throw new Error("加载会话失败");
       const data = await res.json();
-      setChats(data);
+      setConversations(data);
       if (data.length > 0) {
-        selectChat(data[0].id);
+        await selectConversation(data[0].id);
       }
-    } catch (e) {
+    } catch {
       toast.error("加载会话失败");
     } finally {
-      setLoadingChats(false);
+      setLoadingConversations(false);
     }
-  };
+  }, [selectConversation]);
 
-  const selectChat = async (id: number) => {
-    setChatId(id);
-    setMessages([]);
-    try {
-      const res = await fetch(`${API_BASE}/conversation/history/${id}`, {
-        headers: buildAuthHeaders(),
-      });
-      if (!res.ok) throw new Error("加载历史失败");
-      const data = await res.json();
-      setMessages(
-        data.map((m: any) => ({
-          id: Number(m.id),
-          role: m.role,
-          content: m.content,
-          createdAt: m.createdAt ? new Date(m.createdAt) : undefined,
-        }))
-      );
-    } catch (e) {
-      console.error("Failed to load history:", e);
-    }
-  };
+  useEffect(() => {
+    void loadConversations();
+  }, [loadConversations]);
 
-  const createChat = async () => {
+  const createConversation = async () => {
     try {
       const res = await fetch(`${API_BASE}/conversation/create`, {
         method: "POST",
@@ -142,41 +147,41 @@ function ChatView() {
         body: JSON.stringify({ name: "新对话" }),
       });
       if (!res.ok) throw new Error("创建失败");
-      const chat = await res.json();
-      const normalizedChat = {
-        ...chat,
-        id: chat.id ?? chat.conversation_id,
+      const conversation = await res.json();
+      const normalizedConversation = {
+        ...conversation,
+        id: conversation.id ?? conversation.conversation_id,
       };
-      setChats([...chats, normalizedChat]);
-      selectChat(normalizedChat.id);
-    } catch (e) {
+      setConversations([...conversations, normalizedConversation]);
+      selectConversation(normalizedConversation.id);
+    } catch {
       toast.error("创建失败");
     }
   };
 
-  const deleteChat = async (e: React.MouseEvent, chatIdToDelete: number) => {
+  const deleteConversation = async (e: React.MouseEvent, conversationIdToDelete: number) => {
     e.stopPropagation();
     try {
-      const res = await fetch(`${API_BASE}/conversation/delete/${chatIdToDelete}`, {
+      const res = await fetch(`${API_BASE}/conversation/delete/${conversationIdToDelete}`, {
         method: "DELETE",
         headers: buildAuthHeaders(),
       });
       if (!res.ok) throw new Error("删除失败");
-      const newChats = chats.filter((c) => c.id !== chatIdToDelete);
-      setChats(newChats);
-      if (chatId === chatIdToDelete && newChats.length > 0) {
-        selectChat(newChats[0].id);
-      } else if (newChats.length === 0) {
-        setChatId(null);
+      const newConversations = conversations.filter((c) => c.id !== conversationIdToDelete);
+      setConversations(newConversations);
+      if (conversationId === conversationIdToDelete && newConversations.length > 0) {
+        selectConversation(newConversations[0].id);
+      } else if (newConversations.length === 0) {
+        setConversationId(null);
         setMessages([]);
       }
-    } catch (e) {
+    } catch {
       toast.error("删除失败");
     }
   };
 
   const sendMessage = async () => {
-    if (!input.trim() || !chatId) return;
+    if (!input.trim() || !conversationId) return;
 
     const textToSend = input;
     setInput("");
@@ -190,10 +195,10 @@ function ChatView() {
       const res = await fetch(`${API_BASE}/conversation/send`, {
         method: "POST",
         headers: buildAuthHeaders(true),
-        body: JSON.stringify({ conversation_id: chatId, content: textToSend }),
+        body: JSON.stringify({ conversation_id: conversationId, content: textToSend }),
       });
       if (!res.ok) throw new Error("发送失败");
-      await selectChat(chatId);
+      await selectConversation(conversationId);
     } catch (e) {
       const errorMessage: Message = {
         id: -Date.now(),
@@ -236,7 +241,7 @@ function ChatView() {
   const lastUserMessageId = getLastUserMessageId();
 
   const recallMessage = async (messageId: number) => {
-    if (!chatId) return;
+    if (!conversationId) return;
     setActionLoading(true);
     try {
       const res = await fetch(`${API_BASE}/conversation/message/${messageId}/recall`, {
@@ -244,7 +249,7 @@ function ChatView() {
         headers: buildAuthHeaders(),
       });
       if (!res.ok) throw new Error("撤回失败");
-      await selectChat(chatId);
+      await selectConversation(conversationId);
       toast.success("已撤回");
     } catch (e) {
       toast.error((e as Error).message || "撤回失败");
@@ -254,7 +259,7 @@ function ChatView() {
   };
 
   const saveEditMessage = async (messageId: number) => {
-    if (!chatId || !editingContent.trim()) return;
+    if (!conversationId || !editingContent.trim()) return;
     setActionLoading(true);
     try {
       const res = await fetch(`${API_BASE}/conversation/message/${messageId}/edit`, {
@@ -265,7 +270,7 @@ function ChatView() {
       if (!res.ok) throw new Error("编辑失败");
       setEditingMessageId(null);
       setEditingContent("");
-      await selectChat(chatId);
+      await selectConversation(conversationId);
       toast.success("已更新");
     } catch (e) {
       toast.error((e as Error).message || "编辑失败");
@@ -276,11 +281,11 @@ function ChatView() {
 
   return (
     <div className="flex flex-1 h-full min-h-0">
-      {/* Chat List Sidebar: hidden when collapsed */}
+      {/* Conversation list sidebar: hidden when collapsed */}
       <aside
         className={cn(
           "flex flex-col h-full bg-white border-r border-blue-100 shrink-0 transition-all duration-300 overflow-hidden",
-          chatListCollapsed ? "w-0" : "w-64"
+          conversationListCollapsed ? "w-0" : "w-64"
         )}
       >
         <div className="h-14 px-4 flex items-center border-b border-blue-100 shrink-0">
@@ -289,7 +294,7 @@ function ChatView() {
 
         <div className="p-3 border-b border-blue-100 shrink-0">
           <Button
-            onClick={createChat}
+            onClick={createConversation}
             className="w-full bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white rounded-lg h-9 text-sm font-medium shadow-md"
           >
             <Plus className="h-4 w-4 mr-2" />
@@ -299,22 +304,22 @@ function ChatView() {
 
         <ScrollArea className="flex-1 min-h-0">
           <div className="p-2 space-y-1">
-            {loadingChats ? (
+            {loadingConversations ? (
               <div className="space-y-2 p-2">
                 {[1, 2, 3].map((i) => (
                   <div key={i} className="h-12 rounded-lg bg-blue-50 animate-pulse" />
                 ))}
               </div>
-            ) : chats.length === 0 ? (
+            ) : conversations.length === 0 ? (
               <div className="text-center py-8 text-blue-400/50 text-xs">暂无对话</div>
             ) : (
-              chats.map((chat) => (
+              conversations.map((conversation) => (
                 <div
-                  key={chat.id}
-                  onClick={() => selectChat(chat.id)}
+                  key={conversation.id}
+                  onClick={() => selectConversation(conversation.id)}
                   className={cn(
                     "group relative w-full text-left px-3 py-2.5 rounded-lg text-sm transition-all duration-200 cursor-pointer",
-                    chatId === chat.id
+                    conversationId === conversation.id
                       ? "bg-blue-50 border border-blue-200"
                       : "hover:bg-blue-50/50 border border-transparent"
                   )}
@@ -324,19 +329,19 @@ function ChatView() {
                       <p
                         className={cn(
                           "font-medium truncate text-sm",
-                          chatId === chat.id ? "text-blue-700" : "text-blue-600"
+                          conversationId === conversation.id ? "text-blue-700" : "text-blue-600"
                         )}
                       >
-                        {chat.name}
+                        {conversation.name}
                       </p>
-                      {chat.updatedAt && (
+                      {conversation.updatedAt && (
                         <p className="text-xs text-blue-400/60 mt-0.5">
-                          {new Date(chat.updatedAt).toLocaleDateString("zh-CN")}
+                          {new Date(conversation.updatedAt).toLocaleDateString("zh-CN")}
                         </p>
                       )}
                     </div>
                     <button
-                      onClick={(e) => deleteChat(e, chat.id)}
+                      onClick={(e) => deleteConversation(e, conversation.id)}
                       className="opacity-0 group-hover:opacity-100 p-1.5 rounded-md hover:bg-red-50 text-blue-400/60 hover:text-red-500 transition-all"
                     >
                       <Trash2 className="h-3.5 w-3.5" />
@@ -349,16 +354,16 @@ function ChatView() {
         </ScrollArea>
       </aside>
 
-      {/* Chat Area */}
+      {/* Conversation area */}
       <div className="flex-1 flex flex-col bg-blue-50/30 min-h-0">
         {/* Header */}
         <header className="h-14 px-4 flex items-center bg-white border-b border-blue-100 shrink-0 gap-3">
           <button
-            onClick={() => setChatListCollapsed(!chatListCollapsed)}
+            onClick={() => setConversationListCollapsed(!conversationListCollapsed)}
             className="p-1 rounded hover:bg-blue-100 text-blue-500 transition-colors"
-            title={chatListCollapsed ? "展开对话列表" : "收起对话列表"}
+            title={conversationListCollapsed ? "展开对话列表" : "收起对话列表"}
           >
-            {chatListCollapsed ? <Menu className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+            {conversationListCollapsed ? <Menu className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
           </button>
           <Badge
             variant="secondary"
@@ -368,7 +373,7 @@ function ChatView() {
             MiniMax-M2.7
           </Badge>
           <h2 className="font-medium text-blue-500 text-sm">
-            {chats.find((c) => c.id === chatId)?.name || "选择对话"}
+            {conversations.find((c) => c.id === conversationId)?.name || "选择对话"}
           </h2>
         </header>
 
@@ -526,7 +531,7 @@ function ChatView() {
                 onKeyDown={handleKeyDown}
                 placeholder="输入消息... (Shift + Enter 换行)"
                 className="w-full px-5 py-4 pr-14 resize-none bg-transparent rounded-2xl text-sm text-blue-700 placeholder:text-blue-400/60 focus:outline-none max-h-32"
-                disabled={!chatId}
+                disabled={!conversationId}
                 rows={1}
               />
               <div className="absolute right-3 bottom-3 flex items-center gap-2">
@@ -535,7 +540,7 @@ function ChatView() {
                 </span>
                 <Button
                   onClick={sendMessage}
-                  disabled={!input.trim() || !chatId || loading}
+                  disabled={!input.trim() || !conversationId || loading}
                   size="icon"
                   className="h-9 w-9 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 shadow-lg shadow-blue-200 disabled:shadow-none transition-all"
                 >
@@ -764,9 +769,9 @@ export default function HomePage() {
     }
   }, [router]);
 
-  // Chat tab shows chat interface, others show settings content
-  if (view === "chat") {
-    return <ChatView />;
+  // Conversation tab shows conversation interface, others show settings content
+  if (view === "conversation") {
+    return <ConversationView />;
   }
   return <SettingsView />;
 }
