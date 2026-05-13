@@ -22,8 +22,8 @@ public class ConversationService {
     @Autowired private ChatMessageMapper chatMessageMapper;
 
     public Map<String, Object> send(Long conversationId, String content) {
-        Conversation chat = conversationMapper.findById(conversationId);
-        if (chat == null) {
+        Conversation conversation = conversationMapper.findById(conversationId);
+        if (conversation == null) {
             throw new IllegalArgumentException("会话不存在: " + conversationId);
         }
 
@@ -142,15 +142,7 @@ public class ConversationService {
         Conversation conversation = new Conversation();
         conversation.setName(name == null || name.isBlank() ? "新会话" : name);
         conversationMapper.insert(conversation);
-        return Map.of(
-                "id",
-                conversation.getId(),
-                "conversation_id",
-                conversation.getId(),
-                "chat_id",
-                conversation.getId(),
-                "name",
-                conversation.getName());
+        return Map.of("id", conversation.getId(), "conversation_id", conversation.getId(), "name", conversation.getName());
     }
 
     public List<Conversation> listConversations() {

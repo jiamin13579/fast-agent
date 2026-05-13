@@ -91,7 +91,7 @@ function ChatView() {
   const loadChats = async () => {
     setLoadingChats(true);
     try {
-      const res = await fetch(`${API_BASE}/chat/list`, {
+      const res = await fetch(`${API_BASE}/conversation/list`, {
         headers: buildAuthHeaders(),
       });
       if (res.status === 401 || res.status === 403) {
@@ -116,7 +116,7 @@ function ChatView() {
     setChatId(id);
     setMessages([]);
     try {
-      const res = await fetch(`${API_BASE}/chat/history/${id}`, {
+      const res = await fetch(`${API_BASE}/conversation/history/${id}`, {
         headers: buildAuthHeaders(),
       });
       if (!res.ok) throw new Error("加载历史失败");
@@ -136,7 +136,7 @@ function ChatView() {
 
   const createChat = async () => {
     try {
-      const res = await fetch(`${API_BASE}/chat/create`, {
+      const res = await fetch(`${API_BASE}/conversation/create`, {
         method: "POST",
         headers: buildAuthHeaders(true),
         body: JSON.stringify({ name: "新对话" }),
@@ -145,7 +145,7 @@ function ChatView() {
       const chat = await res.json();
       const normalizedChat = {
         ...chat,
-        id: chat.id ?? chat.chat_id,
+        id: chat.id ?? chat.conversation_id ?? chat.chat_id,
       };
       setChats([...chats, normalizedChat]);
       selectChat(normalizedChat.id);
@@ -157,7 +157,7 @@ function ChatView() {
   const deleteChat = async (e: React.MouseEvent, chatIdToDelete: number) => {
     e.stopPropagation();
     try {
-      const res = await fetch(`${API_BASE}/chat/delete/${chatIdToDelete}`, {
+      const res = await fetch(`${API_BASE}/conversation/delete/${chatIdToDelete}`, {
         method: "DELETE",
         headers: buildAuthHeaders(),
       });
@@ -187,10 +187,10 @@ function ChatView() {
     }
 
     try {
-      const res = await fetch(`${API_BASE}/chat/send`, {
+      const res = await fetch(`${API_BASE}/conversation/send`, {
         method: "POST",
         headers: buildAuthHeaders(true),
-        body: JSON.stringify({ chat_id: chatId, content: textToSend }),
+        body: JSON.stringify({ conversation_id: chatId, content: textToSend }),
       });
       if (!res.ok) throw new Error("发送失败");
       await selectChat(chatId);
@@ -239,7 +239,7 @@ function ChatView() {
     if (!chatId) return;
     setActionLoading(true);
     try {
-      const res = await fetch(`${API_BASE}/chat/message/${messageId}/recall`, {
+      const res = await fetch(`${API_BASE}/conversation/message/${messageId}/recall`, {
         method: "DELETE",
         headers: buildAuthHeaders(),
       });
@@ -257,7 +257,7 @@ function ChatView() {
     if (!chatId || !editingContent.trim()) return;
     setActionLoading(true);
     try {
-      const res = await fetch(`${API_BASE}/chat/message/${messageId}/edit`, {
+      const res = await fetch(`${API_BASE}/conversation/message/${messageId}/edit`, {
         method: "PUT",
         headers: buildAuthHeaders(true),
         body: JSON.stringify({ content: editingContent.trim() }),

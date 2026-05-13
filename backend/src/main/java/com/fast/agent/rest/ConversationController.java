@@ -16,15 +16,7 @@ public class ConversationController {
 
     @PostMapping("/send")
     public Map<String, Object> send(@RequestBody Map<String, Object> request) {
-        Number conversationIdValue =
-                (Number)
-                        (request.get("conversation_id") != null
-                                ? request.get("conversation_id")
-                                : (request.get("conversationId") != null
-                                        ? request.get("conversationId")
-                                        : (request.get("chat_id") != null
-                                                ? request.get("chat_id")
-                                                : request.get("chatId"))));
+        Number conversationIdValue = extractConversationId(request);
         String content =
                 (String)
                         (request.get("content") != null
@@ -34,6 +26,18 @@ public class ConversationController {
             throw new IllegalArgumentException("conversation_id 和 content 不能为空");
         }
         return conversationService.send(conversationIdValue.longValue(), content);
+    }
+
+    private Number extractConversationId(Map<String, Object> request) {
+        Object value =
+                request.get("conversation_id") != null
+                        ? request.get("conversation_id")
+                        : (request.get("conversationId") != null
+                                ? request.get("conversationId")
+                                : (request.get("chat_id") != null
+                                        ? request.get("chat_id")
+                                        : request.get("chatId")));
+        return value instanceof Number ? (Number) value : null;
     }
 
     @GetMapping("/history/{conversationId}")

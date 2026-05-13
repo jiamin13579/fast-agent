@@ -12,50 +12,50 @@ import org.springframework.stereotype.Service;
 @Service
 public class MemoryService {
 
-    @Autowired private ChatMessageMapper messageMapper;
+    @Autowired private ChatMessageMapper chatMessageMapper;
 
-    @Autowired private ConversationMapper chatMapper;
+    @Autowired private ConversationMapper conversationMapper;
 
     private static final int MAX_CONTEXT_MESSAGES = 50;
 
-    public List<Map<String, String>> getHistory(Long chatId) {
-        List<ChatMessage> messages = messageMapper.findByConversationId(chatId);
+    public List<Map<String, String>> getHistory(Long conversationId) {
+        List<ChatMessage> messages = chatMessageMapper.findByConversationId(conversationId);
 
         return messages.stream()
                 .map(m -> Map.of("role", m.getRole(), "content", m.getContent()))
                 .collect(Collectors.toList());
     }
 
-    public List<Map<String, String>> getContextWindow(Long chatId, int maxMessages) {
-        List<Map<String, String>> history = getHistory(chatId);
+    public List<Map<String, String>> getContextWindow(Long conversationId, int maxMessages) {
+        List<Map<String, String>> history = getHistory(conversationId);
         if (history.size() <= maxMessages) return history;
         return history.subList(history.size() - maxMessages, history.size());
     }
 
-    public void saveMessage(Long chatId, String role, String content) {
+    public void saveMessage(Long conversationId, String role, String content) {
         ChatMessage message = new ChatMessage();
-        message.setConversationId(chatId);
+        message.setConversationId(conversationId);
         message.setRole(role);
         message.setContent(content);
-        messageMapper.insert(message);
+        chatMessageMapper.insert(message);
     }
 
-    public void clearHistory(Long chatId) {
-        List<ChatMessage> messages = messageMapper.findByConversationId(chatId);
+    public void clearHistory(Long conversationId) {
+        List<ChatMessage> messages = chatMessageMapper.findByConversationId(conversationId);
         for (ChatMessage m : messages) {
-            messageMapper.deleteById(m.getId());
+            chatMessageMapper.deleteById(m.getId());
         }
     }
 
-    public Conversation getOrCreateChat(Long chatId) {
-        if (chatId != null) {
-            Conversation chat = chatMapper.findById(chatId);
-            if (chat != null) return chat;
+    public Conversation getOrCreateConversation(Long conversationId) {
+        if (conversationId != null) {
+            Conversation conversation = conversationMapper.findById(conversationId);
+            if (conversation != null) return conversation;
         }
 
-        Conversation newChat = new Conversation();
-        newChat.setName("新会话");
-        chatMapper.insert(newChat);
-        return newChat;
+        Conversation newConversation = new Conversation();
+        newConversation.setName("新会话");
+        conversationMapper.insert(newConversation);
+        return newConversation;
     }
 }
