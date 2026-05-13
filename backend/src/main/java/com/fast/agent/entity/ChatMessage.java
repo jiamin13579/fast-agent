@@ -16,13 +16,15 @@ public class ChatMessage {
     private Long conversationId;
     private String role;
     private String content;
+    @TableField(exist = false)
     private String model;
-    @TableField("audio_url")
+    @TableField(exist = false)
     private String audioUrl;
-    @TableField("image_urls")
+    @TableField(exist = false)
     private String imageUrls;
+    @TableField(exist = false)
     private String tools;
-    @TableField("tool_results")
+    @TableField(exist = false)
     private String toolResults;
     @TableField("created_at")
     private LocalDateTime createdAt;

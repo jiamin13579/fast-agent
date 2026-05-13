@@ -16,8 +16,9 @@ public class Log {
     private Long taskId;
     private String level;
     private String message;
+    @TableField(exist = false)
     private String source;
-    @TableField("stack_trace")
+    @TableField(exist = false)
     private String stackTrace;
     @TableField("created_at")
     private LocalDateTime createdAt;

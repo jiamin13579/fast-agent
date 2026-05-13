@@ -13,15 +13,19 @@ public class Task {
     @TableId(type = IdType.AUTO)
     private Long id;
     private String name;
+    @TableField(exist = false)
     private String description;
     private String status;
     private String result;
+    @TableField(exist = false)
     private String error;
     @TableField("skill_id")
     private Long skillId;
     private String params;
     @TableField("error_msg")
     private String errorMsg;
+    @TableField("retry_count")
+    private Integer retryCount;
     @TableField("created_at")
     private LocalDateTime createdAt;
     @TableField("updated_at")

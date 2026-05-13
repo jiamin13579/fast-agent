@@ -14,10 +14,12 @@ public class ScheduledTask {
     private Long id;
     private String name;
     private String cron;
+    @TableField(exist = false)
     private String prompt;
-    @TableField("webhook_url")
+    @TableField(exist = false)
     private String webhookUrl;
     private Boolean enabled;
+    @TableField(exist = false)
     private Boolean durable;
     @TableField("skill_id")
     private Long skillId;

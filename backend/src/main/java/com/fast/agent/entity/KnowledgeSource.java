@@ -14,7 +14,12 @@ public class KnowledgeSource {
     private Long id;
     private String name;
     private String type;
+    @TableField(exist = false)
     private String config;
+    private String path;
+    private String url;
+    @TableField("sync_interval")
+    private Integer syncInterval;
     private Boolean enabled;
     @TableField("created_at")
     private LocalDateTime createdAt;

@@ -7,10 +7,15 @@ import com.fast.agent.repository.TaskMapper;
 import com.fast.agent.service.TaskExecutionRunner;
 import java.util.*;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 @Component
+@ConditionalOnProperty(
+        name = "agent.scheduling.enabled",
+        havingValue = "true",
+        matchIfMissing = true)
 public class ScheduledTaskRunner {
 
     @Autowired private ScheduledTaskMapper scheduledTaskMapper;

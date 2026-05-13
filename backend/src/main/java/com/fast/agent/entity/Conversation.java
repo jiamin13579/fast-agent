@@ -12,13 +12,16 @@ import lombok.Data;
 public class Conversation {
     @TableId(type = IdType.AUTO)
     private Long id;
-    @TableField("session_id")
+    @TableField(exist = false)
     private String sessionId;
     private String name;
+    @TableField(exist = false)
     private String model;
-    @TableField("system_prompt")
+    @TableField(exist = false)
     private String systemPrompt;
+    @TableField(exist = false)
     private String tools;
+    @TableField(exist = false)
     private String config;
     @TableField("created_at")
     private LocalDateTime createdAt;

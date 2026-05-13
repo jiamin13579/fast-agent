@@ -62,6 +62,8 @@ public class SecurityConfig {
                                         .permitAll()
                                         .requestMatchers("/api/auth/login")
                                         .permitAll()
+                                        .requestMatchers("/error")
+                                        .permitAll()
                                         .anyRequest()
                                         .authenticated())
                 .addFilterBefore(
