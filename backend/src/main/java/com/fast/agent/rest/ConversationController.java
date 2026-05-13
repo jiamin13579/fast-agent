@@ -49,17 +49,17 @@ public class ConversationController {
     }
 
     @PostMapping("/create")
-    public Map<String, Object> createChat(@RequestBody Map<String, String> request) {
+    public Map<String, Object> createConversation(@RequestBody Map<String, String> request) {
         return conversationService.createConversation(request.getOrDefault("name", "新会话"));
     }
 
     @GetMapping("/list")
-    public List<Conversation> listChats() {
+    public List<Conversation> listConversations() {
         return conversationService.listConversations();
     }
 
     @DeleteMapping("/delete/{chatId}")
-    public Map<String, Object> deleteChat(@PathVariable Long chatId) {
+    public Map<String, Object> deleteConversation(@PathVariable Long chatId) {
         return conversationService.deleteConversation(chatId);
     }
 }
