@@ -152,7 +152,8 @@ rest/ → service/ → repository/
 
 1. 已切换到 MyBatis-Plus starter，并完成 mapper 全量 `BaseMapper<T>` 化（无注解 SQL）。
 2. 已新增 `V2__phase2_normalize_tables.sql`，支持旧表重命名到 `user/conversation/chat_message/...`，并将 `chat_message.chat_id` 迁移为 `conversation_id`。
-3. REST 主路径已切换为 `/api/conversation/*`，并保留 `/api/chat/*` 兼容入口。
-4. 请求字段主语义已切换为 `conversation_id`/`conversationId`；迁移窗口内继续兼容 `chat_id`/`chatId`。
+3. REST 路径已统一为 `/api/conversation/*`，旧路径 `/api/chat/*` 已移除。
+4. 请求字段统一为 `conversation_id`/`conversationId`，旧字段 `chat_id`/`chatId` 已移除兼容。
 5. 创建会话响应默认输出 `id + conversation_id`，不再继续扩散 `chat_id` 新输出。
 6. 前端调用已切换到 `/api/conversation/*` 与 `conversation_id`。
+7. 对旧路径请求返回 `404`，对旧字段请求返回 `400`，避免隐式兼容导致行为漂移。
