@@ -310,10 +310,10 @@ function ConversationView() {
 
     // Send via HTTP
     try {
-      const res = await fetch(`${API_BASE}/conversation/${conversationUuid}/messages`, {
+      const res = await fetch(`${API_BASE}/conversation/send`, {
         method: "POST",
         headers: buildAuthHeaders(true),
-        body: JSON.stringify({ content: textToSend, client_msg_id: assistantMsgId }),
+        body: JSON.stringify({ conversation_uuid: conversationUuid, content: textToSend, client_msg_id: assistantMsgId }),
       });
       if (!res.ok) throw new Error("Failed to send message");
     } catch (e) {
