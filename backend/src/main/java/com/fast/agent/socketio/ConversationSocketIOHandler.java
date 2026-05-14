@@ -1,4 +1,4 @@
-package com.fast.agent.ws;
+package com.fast.agent.socketio;
 
 import com.corundumstudio.socketio.SocketIOClient;
 import com.corundumstudio.socketio.annotation.OnEvent;

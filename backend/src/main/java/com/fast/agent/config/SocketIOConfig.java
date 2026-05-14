@@ -2,7 +2,7 @@ package com.fast.agent.config;
 
 import com.corundumstudio.socketio.SocketIOServer;
 import com.corundumstudio.socketio.AuthorizationListener;
-import com.corundumstudio.socketio.SocketIOClient;
+import com.corundumstudio.socketio.HandshakeData;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -13,9 +13,9 @@ public class SocketIOConfig {
     @Value("${socketio.port:8081}")
     private int port;
 
-    private final com.fast.agent.ws.ConversationSocketIOHandler conversationSocketIOHandler;
+    private final com.fast.agent.socketio.ConversationSocketIOHandler conversationSocketIOHandler;
 
-    public SocketIOConfig(com.fast.agent.ws.ConversationSocketIOHandler conversationSocketIOHandler) {
+    public SocketIOConfig(com.fast.agent.socketio.ConversationSocketIOHandler conversationSocketIOHandler) {
         this.conversationSocketIOHandler = conversationSocketIOHandler;
     }
 
@@ -29,7 +29,7 @@ public class SocketIOConfig {
         // Allow all origins for CORS
         config.setAuthorizationListener(new AuthorizationListener() {
             @Override
-            public boolean isAuthorized(SocketIOClient client) {
+            public boolean isAuthorized(HandshakeData data) {
                 return true;
             }
         });
