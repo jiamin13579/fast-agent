@@ -62,7 +62,7 @@ public class SecurityConfig {
                                         .permitAll()
                                         .requestMatchers("/api/auth/login")
                                         .permitAll()
-                                        .requestMatchers("/ws/**")
+                                        .requestMatchers("/socket.io/**")
                                         .permitAll()
                                         .requestMatchers("/error")
                                         .permitAll()
