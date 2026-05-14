@@ -171,7 +171,7 @@ function ConversationView() {
     setConversationUuid(uuid);
     setMessages([]);
     try {
-      const res = await fetch(`${API_BASE}/conversation/history/${uuid}`, {
+      const res = await fetch(`${API_BASE}/conversations/${uuid}/messages`, {
         headers: buildAuthHeaders(),
       });
       if (!res.ok) throw new Error("加载历史失败");
@@ -192,7 +192,7 @@ function ConversationView() {
   const loadConversations = useCallback(async () => {
     setLoadingConversations(true);
     try {
-      const res = await fetch(`${API_BASE}/conversation/list`, {
+      const res = await fetch(`${API_BASE}/conversations`, {
         headers: buildAuthHeaders(),
       });
       if (res.status === 401 || res.status === 403) {
@@ -219,7 +219,7 @@ function ConversationView() {
 
   const createConversation = async () => {
     try {
-      const res = await fetch(`${API_BASE}/conversation/create`, {
+      const res = await fetch(`${API_BASE}/conversations`, {
         method: "POST",
         headers: buildAuthHeaders(true),
         body: JSON.stringify({ name: "新对话" }),
@@ -236,7 +236,7 @@ function ConversationView() {
   const deleteConversation = async (e: React.MouseEvent, conversationUuidToDelete: string) => {
     e.stopPropagation();
     try {
-      const res = await fetch(`${API_BASE}/conversation/delete/${conversationUuidToDelete}`, {
+      const res = await fetch(`${API_BASE}/conversations/${conversationUuidToDelete}`, {
         method: "DELETE",
         headers: buildAuthHeaders(),
       });
@@ -263,7 +263,7 @@ function ConversationView() {
   const saveRenameConversation = async () => {
     if (!editingConversationUuid || !editingConversationName.trim()) return;
     try {
-      const res = await fetch(`${API_BASE}/conversation/rename/${editingConversationUuid}`, {
+      const res = await fetch(`${API_BASE}/conversations/${editingConversationUuid}`, {
         method: "PUT",
         headers: buildAuthHeaders(true),
         body: JSON.stringify({ name: editingConversationName.trim() }),
@@ -310,10 +310,10 @@ function ConversationView() {
 
     // Send via HTTP
     try {
-      const res = await fetch(`${API_BASE}/conversation/send`, {
+      const res = await fetch(`${API_BASE}/conversations/${conversationUuid}/messages`, {
         method: "POST",
         headers: buildAuthHeaders(true),
-        body: JSON.stringify({ conversation_uuid: conversationUuid, content: textToSend, client_msg_id: assistantMsgId }),
+        body: JSON.stringify({ content: textToSend, client_msg_id: assistantMsgId }),
       });
       if (!res.ok) throw new Error("Failed to send message");
     } catch (e) {
