@@ -46,6 +46,7 @@ public class ConversationService {
         assistantMsg.setConversationUuid(conversationUuid);
         assistantMsg.setRole("assistant");
         assistantMsg.setContent(response);
+        assistantMsg.setCreatedAt(java.time.LocalDateTime.now());
         chatMessageMapper.insert(assistantMsg);
 
         // Push new message to room
@@ -53,7 +54,7 @@ public class ConversationService {
             "message_uuid", assistantMsg.getUuid(),
             "role", "assistant",
             "content", response,
-            "timestamp", assistantMsg.getCreatedAt().toString()
+            "timestamp", assistantMsg.getCreatedAt() != null ? assistantMsg.getCreatedAt().toString() : ""
         ));
 
         return Map.of("response", response);
