@@ -1,7 +1,7 @@
 package com.fast.agent.service;
 
-import com.fast.agent.engine.LLMAgent;
-import com.fast.agent.engine.LLMClient;
+import com.fast.agent.runtime.LLMAgent;
+import com.fast.agent.runtime.LLMClient;
 import com.fast.agent.entity.ChatMessage;
 import com.fast.agent.entity.Conversation;
 import com.fast.agent.repository.ChatMessageMapper;
