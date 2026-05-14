@@ -3,7 +3,6 @@ package com.fast.agent.config;
 import com.corundumstudio.socketio.SocketIOServer;
 import com.corundumstudio.socketio.AuthorizationListener;
 import com.corundumstudio.socketio.SocketIOClient;
-import com.corundumstudio.socketio.protocol.JsonPacket;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -30,7 +29,7 @@ public class SocketIOConfig {
         // Allow all origins for CORS
         config.setAuthorizationListener(new AuthorizationListener() {
             @Override
-            public boolean isAuthorized(SocketIOClient client, JsonPacket packet) {
+            public boolean isAuthorized(SocketIOClient client) {
                 return true;
             }
         });

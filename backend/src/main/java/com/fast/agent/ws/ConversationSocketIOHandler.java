@@ -33,14 +33,4 @@ public class ConversationSocketIOHandler {
         // TODO: Validate token and associate client with user
         log.info("Client {} authenticated with token", client.getSessionId());
     }
-
-    @OnConnect
-    public void onConnect(SocketIOClient client) {
-        log.info("Client connected: {}", client.getSessionId());
-    }
-
-    @OnDisconnect
-    public void onDisconnect(SocketIOClient client) {
-        log.info("Client disconnected: {}", client.getSessionId());
-    }
 }
