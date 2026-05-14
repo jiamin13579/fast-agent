@@ -45,14 +45,17 @@ export function useWs(onMessage: WsHandler) {
     };
 
     ws.onerror = ws.onclose = () => {
-      ws.close();
-      wsRef.current = null;
+      if (wsRef.current === ws) {
+        wsRef.current = null;
+      }
     };
   }, []);
 
   useEffect(() => {
     connect();
+    const reconnectInterval = setInterval(connect, 3000);
     return () => {
+      clearInterval(reconnectInterval);
       wsRef.current?.close();
     };
   }, [connect]);

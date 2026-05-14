@@ -78,7 +78,10 @@
       "Bash(kill -9 10369)",
       "Bash(fuser -k 8080/tcp)",
       "Read(//tmp/**)",
-      "Bash(export https_proxy=http://127.0.0.1:7890 http_proxy=http://127.0.0.1:7890 all_proxy=socks5://127.0.0.1:7890)"
+      "Bash(export https_proxy=http://127.0.0.1:7890 http_proxy=http://127.0.0.1:7890 all_proxy=socks5://127.0.0.1:7890)",
+      "Bash(pkill -f \"java.*agent-system\")",
+      "Bash(mvn dependency:resolve -q)",
+      "Bash(mvn dependency:tree -DincludeArtifactIds=netty-socketio)"
     ]
   }
 }

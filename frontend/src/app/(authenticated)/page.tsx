@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useApp } from "@/components/layout";
 import { clearAuth, getToken } from "@/lib/auth";
 import { API_BASE } from "@/lib/config";
-import { useWs } from "@/lib/ws";
+import { getSocket, joinRoom, leaveRoom, onEvent, offEvent } from "@/lib/socket";
 import { cn } from "@/lib/utils";
 import {
   Send,
@@ -82,24 +82,25 @@ function ConversationView() {
 
   const handleWsMessage = useCallback((data: Record<string, unknown>) => {
     const type = data.type as string;
+    const clientMsgId = data.client_msg_id as string;
+
     if (type === "start") {
-      //已开始，等chunk累积
+      // 已开始，等待 chunk 累积
     } else if (type === "chunk") {
       const content = data.content as string;
-      const clientMsgId = data.client_msg_id as string;
       setMessages((prev) => {
         const last = prev[prev.length - 1];
         if (last && last.uuid === clientMsgId) {
           return [...prev.slice(0, -1), { ...last, content: last.content + content }];
         }
-        return [...prev, { uuid: String(Date.now()), role: "assistant" as const, content }];
+        return [...prev, { uuid: clientMsgId || String(Date.now()), role: "assistant" as const, content }];
       });
     } else if (type === "done") {
       setLoading(false);
     } else if (type === "error") {
       setMessages((prev) => {
         const last = prev[prev.length - 1];
-        if (last) {
+        if (last && last.role === "assistant") {
           return [...prev.slice(0, -1), { ...last, content: last.content + "\n[错误] " + data.message }];
         }
         return prev;
@@ -108,7 +109,53 @@ function ConversationView() {
     }
   }, []);
 
-  const { send } = useWs(handleWsMessage);
+  // Socket event handling
+  useEffect(() => {
+    const handleNewMessage = (...args: unknown[]) => {
+      const data = args[0] as Record<string, unknown>;
+      handleWsMessage(data);
+    };
+
+    const handleStreamChunk = (...args: unknown[]) => {
+      const data = args[0] as Record<string, unknown>;
+      handleWsMessage(data);
+    };
+
+    const handleAgentProgress = (...args: unknown[]) => {
+      const data = args[0] as Record<string, unknown>;
+      handleWsMessage(data);
+    };
+
+    const handleSync = (...args: unknown[]) => {
+      const data = args[0] as Record<string, unknown>;
+      handleWsMessage(data);
+    };
+
+    onEvent("new_message", handleNewMessage);
+    onEvent("stream_chunk", handleStreamChunk);
+    onEvent("agent_progress", handleAgentProgress);
+    onEvent("sync", handleSync);
+
+    return () => {
+      offEvent("new_message", handleNewMessage);
+      offEvent("stream_chunk", handleStreamChunk);
+      offEvent("agent_progress", handleAgentProgress);
+      offEvent("sync", handleSync);
+    };
+  }, [handleWsMessage]);
+
+  // Join/leave rooms when conversation changes
+  useEffect(() => {
+    if (conversationUuid) {
+      joinRoom(`conversation:${conversationUuid}`);
+      joinRoom(`agent:${conversationUuid}`);
+
+      return () => {
+        leaveRoom(`conversation:${conversationUuid}`);
+        leaveRoom(`agent:${conversationUuid}`);
+      };
+    }
+  }, [conversationUuid]);
 
   useEffect(() => {
     scrollToBottom();
@@ -246,19 +293,40 @@ function ConversationView() {
       textareaRef.current.style.height = "auto";
     }
 
-    const clientMsgId = String(Date.now());
-    const placeholderId = clientMsgId;
+    const userMsgId = String(Date.now());
+    const assistantMsgId = userMsgId + "_assistant";
+
+    // 添加用户消息
     setMessages((prev) => [
       ...prev,
-      { uuid: placeholderId, role: "assistant", content: "" },
+      { uuid: userMsgId, role: "user", content: textToSend },
     ]);
 
-    send({
-      action: "send",
-      conversation_uuid: conversationUuid,
-      content: textToSend,
-      client_msg_id: clientMsgId,
-    });
+    // 添加助手占位消息
+    setMessages((prev) => [
+      ...prev,
+      { uuid: assistantMsgId, role: "assistant", content: "" },
+    ]);
+
+    // Send via HTTP
+    try {
+      const res = await fetch(`${API_BASE}/conversation/${conversationUuid}/messages`, {
+        method: "POST",
+        headers: buildAuthHeaders(true),
+        body: JSON.stringify({ content: textToSend, client_msg_id: assistantMsgId }),
+      });
+      if (!res.ok) throw new Error("Failed to send message");
+    } catch (e) {
+      console.error("Send message error:", e);
+      setMessages((prev) => {
+        const last = prev[prev.length - 1];
+        if (last && last.role === "assistant") {
+          return [...prev.slice(0, -1), { ...last, content: last.content + "\n[错误] 发送失败" }];
+        }
+        return prev;
+      });
+      setLoading(false);
+    }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -596,24 +664,17 @@ function ConversationView() {
               ))}
 
               {loading && (
-                <div className="flex gap-4">
+                <div className="flex gap-4 items-start">
                   <Avatar className="h-9 w-9 rounded-xl flex-shrink-0 bg-gradient-to-br from-blue-400 to-cyan-400">
                     <AvatarFallback className="text-white font-semibold text-sm">AI</AvatarFallback>
                   </Avatar>
-                  <div className="rounded-2xl rounded-bl-md bg-white border border-blue-100 px-5 py-4 shadow-sm">
-                    <div className="flex gap-1">
-                      <span
-                        className="w-2 h-2 rounded-full bg-blue-400 animate-bounce"
-                        style={{ animationDelay: "0ms" }}
-                      />
-                      <span
-                        className="w-2 h-2 rounded-full bg-blue-400 animate-bounce"
-                        style={{ animationDelay: "150ms" }}
-                      />
-                      <span
-                        className="w-2 h-2 rounded-full bg-blue-400 animate-bounce"
-                        style={{ animationDelay: "300ms" }}
-                      />
+                  <div className="rounded-2xl rounded-bl-md bg-white border border-blue-100 px-5 py-4 shadow-sm relative overflow-hidden">
+                    {/* Pulse ring effect */}
+                    <div className="absolute inset-0 bg-gradient-to-r from-blue-50 via-transparent to-cyan-50 animate-pulse-bg" />
+                    <div className="relative flex gap-1.5 items-center">
+                      <span className="relative w-2.5 h-2.5 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 animate-ping-slow shadow-sm" style={{ animationDelay: "0ms" }} />
+                      <span className="relative w-2.5 h-2.5 rounded-full bg-gradient-to-br from-blue-400 to-cyan-400 animate-ping-slow shadow-sm" style={{ animationDelay: "200ms" }} />
+                      <span className="relative w-2.5 h-2.5 rounded-full bg-gradient-to-br from-blue-300 to-cyan-300 animate-ping-slow shadow-sm" style={{ animationDelay: "400ms" }} />
                     </div>
                   </div>
                 </div>
