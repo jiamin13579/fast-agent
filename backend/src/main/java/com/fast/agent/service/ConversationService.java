@@ -84,7 +84,7 @@ public class ConversationService {
         conversationMapper.insert(conversation);
 
         // Push sync for new conversation
-        pushService.pushSync(conversationUuid, Map.of(
+        pushService.pushSync(conversation.getUuid(), Map.of(
             "action", "create",
             "uuid", conversation.getUuid(),
             "name", conversation.getName()

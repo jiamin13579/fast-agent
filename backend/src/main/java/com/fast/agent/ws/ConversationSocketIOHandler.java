@@ -1,7 +1,6 @@
 package com.fast.agent.ws;
 
 import com.corundumstudio.socketio.SocketIOClient;
-import com.corundumstudio.socketio.SocketIOServer;
 import com.corundumstudio.socketio.annotation.OnEvent;
 import com.fast.agent.service.ConversationService;
 import com.fast.agent.service.SocketIOPushService;
@@ -14,7 +13,6 @@ import org.springframework.stereotype.Component;
 @Slf4j
 public class ConversationSocketIOHandler {
 
-    private final SocketIOServer socketIOServer;
     private final ConversationService conversationService;
     private final SocketIOPushService pushService;
 
