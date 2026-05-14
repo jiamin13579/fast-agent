@@ -1,29 +1,31 @@
 package com.fast.agent.service;
 
 import com.corundumstudio.socketio.SocketIOServer;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
 import java.util.Map;
 
 @Service
+@Slf4j
 public class SocketIOPushService {
 
     private SocketIOServer socketIOServer;
 
     public SocketIOPushService(@Lazy SocketIOServer socketIOServer) {
-        // Using @Lazy to break circular reference - socketIOServer will be injected after initialization
         this.socketIOServer = socketIOServer;
     }
 
     public void pushToRoom(String room, String event, Object data) {
         if (socketIOServer == null) {
+            log.warn("SocketIOServer not initialized, skip push to room: {}", room);
             return;
         }
         try {
             socketIOServer.getNamespace("/").getRoomOperations(room).sendEvent(event, data);
         } catch (Exception e) {
-            // Log error but don't crash
+            log.error("Failed to push event {} to room {}: {}", event, room, e.getMessage());
         }
     }
 

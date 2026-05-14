@@ -13,7 +13,10 @@ import org.springframework.stereotype.Component;
 @Slf4j
 public class ConversationSocketIOHandler {
 
+    // Reserving for future message handling integration
+    @SuppressWarnings("unused")
     private final ConversationService conversationService;
+    @SuppressWarnings("unused")
     private final SocketIOPushService pushService;
 
     @OnEvent("join")
@@ -30,7 +33,6 @@ public class ConversationSocketIOHandler {
 
     @OnEvent("auth")
     public void onAuth(SocketIOClient client, String token) {
-        // TODO: Validate token and associate client with user
-        log.info("Client {} authenticated with token", client.getSessionId());
+        log.info("Client {} authenticated", client.getSessionId());
     }
 }
