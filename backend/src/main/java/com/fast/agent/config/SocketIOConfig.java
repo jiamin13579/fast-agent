@@ -1,15 +1,19 @@
 package com.fast.agent.config;
 
 import com.corundumstudio.socketio.SocketIOServer;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
+@RequiredArgsConstructor
 public class SocketIOConfig {
 
     @Value("${socketio.port:8080}")
     private int port;
+
+    private final com.fast.agent.ws.ConversationSocketIOHandler conversationSocketIOHandler;
 
     @Bean
     public SocketIOServer socketIOServer() {
@@ -22,7 +26,7 @@ public class SocketIOConfig {
         config.setHeartbeatTimeout(60);
 
         SocketIOServer server = new SocketIOServer(config);
-        server.addNamespace("/");
+        server.addNamespace("/").addListeners(conversationSocketIOHandler);
 
         return server;
     }
