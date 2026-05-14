@@ -24,6 +24,8 @@ public class ConversationService {
 
     @Autowired private ChatMessageMapper chatMessageMapper;
 
+    @Autowired private SocketIOPushService pushService;
+
     public Map<String, Object> send(String conversationUuid, String content) {
         Conversation conversation = conversationMapper.findByUuid(conversationUuid);
         if (conversation == null) {
@@ -46,6 +48,14 @@ public class ConversationService {
         assistantMsg.setContent(response);
         chatMessageMapper.insert(assistantMsg);
 
+        // Push new message to room
+        pushService.pushNewMessage(conversationUuid, Map.of(
+            "message_uuid", assistantMsg.getUuid(),
+            "role", "assistant",
+            "content", response,
+            "timestamp", assistantMsg.getCreatedAt().toString()
+        ));
+
         return Map.of("response", response);
     }
 
@@ -60,7 +70,7 @@ public class ConversationService {
 
     public Flux<String> streamResponse(String conversationUuid, String content) {
         List<Map<String, String>> history = memoryService.getHistory(conversationUuid);
-        return Flux.just(llmAgent.processStream(content, history));
+        return llmAgent.processStreamFlux(content, history);
     }
 
     public List<ChatMessage> getHistory(String conversationUuid) {
@@ -72,6 +82,14 @@ public class ConversationService {
         conversation.setUuid(UUID.randomUUID().toString());
         conversation.setName(name == null || name.isBlank() ? "新会话" : name);
         conversationMapper.insert(conversation);
+
+        // Push sync for new conversation
+        pushService.pushSync(conversationUuid, Map.of(
+            "action", "create",
+            "uuid", conversation.getUuid(),
+            "name", conversation.getName()
+        ));
+
         return Map.of(
                 "uuid",
                 conversation.getUuid(),
@@ -89,6 +107,13 @@ public class ConversationService {
         if (conversation != null) {
             conversationMapper.deleteById(conversation.getId());
         }
+
+        // Push sync for deleted conversation
+        pushService.pushSync(conversationUuid, Map.of(
+            "action", "delete",
+            "uuid", conversationUuid
+        ));
+
         return Map.of("success", true);
     }
 
@@ -102,6 +127,14 @@ public class ConversationService {
         }
         conversation.setName(name);
         conversationMapper.updateById(conversation);
+
+        // Push sync for renamed conversation
+        pushService.pushSync(conversationUuid, Map.of(
+            "action", "rename",
+            "uuid", conversationUuid,
+            "name", name
+        ));
+
         return Map.of("success", true, "name", name);
     }
 }
