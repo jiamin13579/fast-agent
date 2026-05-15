@@ -4,6 +4,7 @@ import com.fast.agent.runtime.LLMProvider;
 import com.fast.agent.runtime.LLMProviderFactory;
 import com.fast.agent.entity.ChatMessage;
 import com.fast.agent.entity.Conversation;
+import com.fast.agent.entity.LlmModel;
 import com.fast.agent.repository.ChatMessageMapper;
 import com.fast.agent.repository.ConversationMapper;
 import java.util.ArrayList;

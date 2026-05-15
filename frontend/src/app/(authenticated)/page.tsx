@@ -32,6 +32,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { AgentSelect } from "@/components/AgentSelect";
+import { ModelSelect } from "@/components/ModelSelect";
 import { toast } from "sonner";
 
 interface Message {
@@ -65,6 +67,7 @@ function buildAuthHeaders(includeJson = false): HeadersInit {
 
 // ============ CONVERSATION VIEW ============
 function ConversationView() {
+  const { currentNamespaceId, isAdmin } = useApp();
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [conversationUuid, setConversationUuid] = useState<string | null>(null);
@@ -79,6 +82,11 @@ function ConversationView() {
   const [editingConversationName, setEditingConversationName] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  const [agents, setAgents] = useState<{ id: number; name: string }[]>([]);
+  const [selectedAgentId, setSelectedAgentId] = useState<number | null>(null);
+  const [availableModels, setAvailableModels] = useState<{ id: number; name: string }[]>([]);
+  const [selectedModelId, setSelectedModelId] = useState<number | null>(null);
 
   const handleWsMessage = useCallback((data: Record<string, unknown>) => {
     const type = data.type as string;
@@ -139,6 +147,34 @@ function ConversationView() {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  // Load agents when namespace changes
+  useEffect(() => {
+    if (!currentNamespaceId) return;
+    fetch(`${API_BASE}/agents?namespace_id=${currentNamespaceId}`, { headers: buildAuthHeaders() })
+      .then(r => r.json()).then(data => {
+        setAgents(data);
+        if (data.length > 0) setSelectedAgentId(data[0].id);
+      }).catch(console.error);
+  }, [currentNamespaceId]);
+
+  // Load models when agent changes
+  useEffect(() => {
+    if (!selectedAgentId) return;
+    fetch(`${API_BASE}/agents/${selectedAgentId}/resources?type=MODEL`, { headers: buildAuthHeaders() })
+      .then(r => r.json()).then(data => {
+        const modelIds = data.map((r: { resource_id: number }) => r.resource_id);
+        if (isAdmin && modelIds.length > 0) {
+          fetch(`${API_BASE}/admin/models?namespace_id=${currentNamespaceId}`, { headers: buildAuthHeaders() })
+            .then(r => r.json()).then(allModels => {
+              const filtered = allModels.filter((m: { id: number }) => modelIds.includes(m.id));
+              setAvailableModels(filtered);
+            }).catch(() => setAvailableModels(modelIds.map((id: number) => ({ id, name: `模型 ${id}` }))));
+        } else {
+          setAvailableModels(modelIds.map((id: number) => ({ id, name: `模型 ${id}` })));
+        }
+      }).catch(console.error);
+  }, [selectedAgentId, currentNamespaceId, isAdmin]);
 
   const scrollToBottom = () => {
     if (scrollRef.current) {
@@ -201,7 +237,12 @@ function ConversationView() {
       const res = await fetch(`${API_BASE}/conversations`, {
         method: "POST",
         headers: buildAuthHeaders(true),
-        body: JSON.stringify({ name: "新对话" }),
+        body: JSON.stringify({
+          name: "新对话",
+          agent_id: selectedAgentId,
+          model_id: selectedModelId,
+          namespace_id: currentNamespaceId,
+        }),
       });
       if (!res.ok) throw new Error("创建失败");
       const conversation = await res.json();
@@ -514,14 +555,21 @@ function ConversationView() {
           >
             {conversationListCollapsed ? <Menu className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
           </button>
-          <Badge
-            variant="secondary"
-            className="bg-blue-50 text-blue-600 border-blue-200 px-3 py-1 rounded-full text-xs font-medium"
-          >
-            <span className="w-1.5 h-1.5 rounded-full bg-blue-500 mr-1.5 animate-pulse" />
-            MiniMax-M2.7
-          </Badge>
-          <h2 className="font-medium text-blue-500 text-sm">
+          <AgentSelect
+            agents={agents}
+            value={selectedAgentId}
+            onChange={(id) => { setSelectedAgentId(id); setSelectedModelId(null); }}
+            placeholder="选择 Agent"
+          />
+          {selectedAgentId && (
+            <ModelSelect
+              models={availableModels}
+              value={selectedModelId}
+              onChange={setSelectedModelId}
+              placeholder="选择模型"
+            />
+          )}
+          <h2 className="font-medium text-blue-500 text-sm ml-auto">
             {conversations.find((c) => c.uuid === conversationUuid)?.name || "选择对话"}
           </h2>
         </header>
