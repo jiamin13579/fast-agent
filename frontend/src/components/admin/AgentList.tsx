@@ -66,7 +66,7 @@ export function AgentList() {
   const handleDelete = async (id: number) => {
     if (!confirm("确定要删除吗？")) return;
     try {
-      await api.delete(`/api/admin/agents/${id}`);
+      await api.delete(`/admin/agents/${id}`);
       toast.success("删除成功");
       fetchAgents();
     } catch {

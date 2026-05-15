@@ -62,8 +62,8 @@ export function ModelForm({ open, onClose, onSuccess, editingModel, namespaces }
 
     try {
       const url = editingModel
-        ? `/api/admin/models/${editingModel.id}`
-        : `/api/admin/models`;
+        ? `/admin/models/${editingModel.id}`
+        : `/admin/models`;
       const method = editingModel ? "PUT" : "POST";
 
       await api[method === "PUT" ? "put" : "post"](url, form);

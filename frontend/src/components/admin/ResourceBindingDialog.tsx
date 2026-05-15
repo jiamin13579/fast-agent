@@ -49,7 +49,7 @@ export function ResourceBindingDialog({ agent, open, onClose }: ResourceBindingD
   const fetchModels = async () => {
     try {
       const nsId = agent.namespace_id || 0;
-      const data = await api.get<Model[]>(`/api/admin/models?namespace_id=${nsId}`);
+      const data = await api.get<Model[]>(`/admin/models?namespace_id=${nsId}`);
       setModels(data);
     } catch {
       toast.error("获取模型列表失败");
@@ -58,7 +58,7 @@ export function ResourceBindingDialog({ agent, open, onClose }: ResourceBindingD
 
   const fetchBoundResources = async () => {
     try {
-      const data = await api.get<BoundResource[]>(`/api/admin/agents/${agent.id}/resources`);
+      const data = await api.get<BoundResource[]>(`/admin/agents/${agent.id}/resources`);
       setBoundResources(data);
     } catch {
       toast.error("获取绑定资源失败");
@@ -75,7 +75,7 @@ export function ResourceBindingDialog({ agent, open, onClose }: ResourceBindingD
   const handleBind = async (resourceType: string, resourceId: number) => {
     setBinding(true);
     try {
-      await api.post(`/api/admin/agents/${agent.id}/resources`, { resource_type: resourceType, resource_id: resourceId });
+      await api.post(`/admin/agents/${agent.id}/resources`, { resource_type: resourceType, resource_id: resourceId });
       toast.success("绑定成功");
       fetchBoundResources();
     } catch (err: any) {
@@ -87,7 +87,7 @@ export function ResourceBindingDialog({ agent, open, onClose }: ResourceBindingD
 
   const handleUnbind = async (resourceId: number, resourceType: string) => {
     try {
-      await api.delete(`/api/admin/agents/${agent.id}/resources/${resourceId}?type=${resourceType}`);
+      await api.delete(`/admin/agents/${agent.id}/resources/${resourceId}?type=${resourceType}`);
       toast.success("解绑成功");
       fetchBoundResources();
     } catch (err: any) {

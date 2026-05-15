@@ -47,7 +47,7 @@ export function NamespaceList() {
   const handleDelete = async (id: number) => {
     if (!confirm("确定要删除吗？")) return;
     try {
-      await api.delete(`/api/admin/namespaces/${id}`);
+      await api.delete(`/admin/namespaces/${id}`);
       toast.success("删除成功");
       fetchNamespaces();
     } catch {

@@ -33,7 +33,7 @@ export default function NamespaceUsersPage() {
 
   const fetchNamespace = async () => {
     try {
-      const data = await api.get<Namespace>(`/api/admin/namespaces/${namespaceId}`);
+      const data = await api.get<Namespace>(`/admin/namespaces/${namespaceId}`);
       setNamespace(data);
     } catch {
       toast.error("获取 Namespace 信息失败");
@@ -43,8 +43,8 @@ export default function NamespaceUsersPage() {
   const fetchUsers = async () => {
     try {
       // Note: This endpoint does not exist yet in the backend
-      // The backend needs to implement GET /api/admin/namespaces/{id}/users
-      const data = await api.get<NamespaceUser[]>(`/api/admin/namespaces/${namespaceId}/users`);
+      // The backend needs to implement GET /admin/namespaces/{id}/users
+      const data = await api.get<NamespaceUser[]>(`/admin/namespaces/${namespaceId}/users`);
       setUsers(data);
     } catch (error) {
       // Backend endpoint not implemented yet
@@ -62,8 +62,8 @@ export default function NamespaceUsersPage() {
   const handleRoleChange = async (userId: number, newRole: "ADMIN" | "USER") => {
     try {
       // Note: This endpoint does not exist yet in the backend
-      // The backend needs to implement PUT /api/admin/namespaces/{id}/users/{userId}
-      await api.put(`/api/admin/namespaces/${namespaceId}/users/${userId}`, { role: newRole });
+      // The backend needs to implement PUT /admin/namespaces/{id}/users/{userId}
+      await api.put(`/admin/namespaces/${namespaceId}/users/${userId}`, { role: newRole });
       toast.success("更新成功");
       fetchUsers();
     } catch (error) {
@@ -153,11 +153,11 @@ export default function NamespaceUsersPage() {
         </p>
         <ul className="text-sm text-yellow-700 mt-2 list-disc list-inside">
           <li>
-            <code>GET /api/admin/namespaces/{namespaceId}/users</code> - 获取
+            <code>GET /admin/namespaces/{namespaceId}/users</code> - 获取
             Namespace 用户列表
           </li>
           <li>
-            <code>PUT /api/admin/namespaces/{"{"}namespaceId{"}"}/users/{"{"}userId{"}"}</code>
+            <code>PUT /admin/namespaces/{"{"}namespaceId{"}"}/users/{"{"}userId{"}"}</code>
             - 更新用户角色
           </li>
         </ul>

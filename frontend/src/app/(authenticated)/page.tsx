@@ -139,7 +139,7 @@ function ConversationView() {
   // Load agents when namespace changes
   useEffect(() => {
     if (!currentNamespaceId) return;
-    api.get<{ id: number; name: string }[]>(`/api/agents?namespace_id=${currentNamespaceId}`)
+    api.get<{ id: number; name: string }[]>(`/agents?namespace_id=${currentNamespaceId}`)
       .then(data => {
         setAgents(data);
         if (data.length > 0) setSelectedAgentId(data[0].id);
@@ -149,11 +149,11 @@ function ConversationView() {
   // Load models when agent changes
   useEffect(() => {
     if (!selectedAgentId) return;
-    api.get<{ resource_id: number }[]>(`/api/agents/${selectedAgentId}/resources?type=MODEL`)
+    api.get<{ resource_id: number }[]>(`/agents/${selectedAgentId}/resources?type=MODEL`)
       .then(data => {
         const modelIds = data.map((r) => r.resource_id);
         if (isAdmin && modelIds.length > 0) {
-          api.get<{ id: number; name: string }[]>(`/api/admin/models?namespace_id=${currentNamespaceId}`)
+          api.get<{ id: number; name: string }[]>(`/admin/models?namespace_id=${currentNamespaceId}`)
             .then(allModels => {
               const filtered = allModels.filter((m) => modelIds.includes(m.id));
               setAvailableModels(filtered);
@@ -174,7 +174,7 @@ function ConversationView() {
     setConversationUuid(uuid);
     setMessages([]);
     try {
-      const data: MessageDto[] = await api.get(`/api/conversations/${uuid}/messages`);
+      const data: MessageDto[] = await api.get(`/conversations/${uuid}/messages`);
       setMessages(
         data.map((m) => ({
           uuid: m.uuid,
@@ -191,7 +191,7 @@ function ConversationView() {
   const loadConversations = useCallback(async () => {
     setLoadingConversations(true);
     try {
-      const data = await api.get<ConversationItem[]>("/api/conversations");
+      const data = await api.get<ConversationItem[]>("conversations");
       setConversations(data);
       if (data.length > 0) {
         await selectConversation(data[0].uuid);
@@ -214,7 +214,7 @@ function ConversationView() {
 
   const createConversation = async () => {
     try {
-      const conversation = await api.post<ConversationItem>("/api/conversations", {
+      const conversation = await api.post<ConversationItem>("conversations", {
         name: "新对话",
         agent_id: selectedAgentId,
         model_id: selectedModelId,
@@ -230,7 +230,7 @@ function ConversationView() {
   const deleteConversation = async (e: React.MouseEvent, conversationUuidToDelete: string) => {
     e.stopPropagation();
     try {
-      await api.delete(`/api/conversations/${conversationUuidToDelete}`);
+      await api.delete(`/conversations/${conversationUuidToDelete}`);
       const newConversations = conversations.filter((c) => c.uuid !== conversationUuidToDelete);
       setConversations(newConversations);
       if (conversationUuid === conversationUuidToDelete && newConversations.length > 0) {
@@ -253,7 +253,7 @@ function ConversationView() {
   const saveRenameConversation = async () => {
     if (!editingConversationUuid || !editingConversationName.trim()) return;
     try {
-      await api.put(`/api/conversations/${editingConversationUuid}`, { name: editingConversationName.trim() });
+      await api.put(`/conversations/${editingConversationUuid}`, { name: editingConversationName.trim() });
       setConversations((prev) =>
         prev.map((c) =>
           c.uuid === editingConversationUuid ? { ...c, name: editingConversationName.trim() } : c
@@ -295,7 +295,7 @@ function ConversationView() {
 
     // Send via HTTP
     try {
-      await api.post(`/api/conversations/${conversationUuid}/messages`, { content: textToSend, client_msg_id: assistantMsgId });
+      await api.post(`/conversations/${conversationUuid}/messages`, { content: textToSend, client_msg_id: assistantMsgId });
     } catch (e) {
       console.error("Send message error:", e);
       setMessages((prev) => {

@@ -80,7 +80,7 @@ export function ModelList() {
   const handleDelete = async (id: number) => {
     if (!confirm("确定要删除吗？")) return;
     try {
-      await api.delete(`/api/admin/models/${id}`);
+      await api.delete(`/admin/models/${id}`);
       toast.success("删除成功");
       fetchModels(filterNamespace === "all" ? undefined : filterNamespace);
     } catch {

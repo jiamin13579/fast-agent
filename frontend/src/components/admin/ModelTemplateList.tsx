@@ -49,7 +49,7 @@ export function ModelTemplateList() {
   const handleDelete = async (id: number) => {
     if (!confirm("确定要删除吗？")) return;
     try {
-      await api.delete(`/api/admin/model-templates/${id}`);
+      await api.delete(`/admin/model-templates/${id}`);
       toast.success("删除成功");
       fetchTemplates();
     } catch {

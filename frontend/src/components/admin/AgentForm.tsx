@@ -54,8 +54,8 @@ export function AgentForm({ open, onClose, onSuccess, editingAgent, namespaces }
 
     try {
       const url = editingAgent
-        ? `/api/admin/agents/${editingAgent.id}`
-        : `/api/admin/agents`;
+        ? `/admin/agents/${editingAgent.id}`
+        : `/admin/agents`;
       const method = editingAgent ? "PUT" : "POST";
 
       await api[method === "PUT" ? "put" : "post"](url, form);

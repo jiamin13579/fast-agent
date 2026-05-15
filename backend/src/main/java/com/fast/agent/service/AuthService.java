@@ -79,9 +79,12 @@ public class AuthService {
         }
         return userNamespaceMapper.selectList(null).stream()
                 .filter(un -> un.getUserId().equals(user.getId()))
-                .map(un -> Map.<String, Object>of(
-                        "id", un.getNamespaceId(),
-                        "role", un.getRole()))
+                .map(un -> {
+                    Map<String, Object> map = new HashMap<>();
+                    map.put("id", un.getNamespaceId());
+                    map.put("role", un.getRole());
+                    return map;
+                })
                 .collect(Collectors.toList());
     }
 }

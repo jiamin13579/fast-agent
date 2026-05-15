@@ -44,8 +44,8 @@ export function NamespaceForm({ open, onClose, onSuccess, editingNamespace }: Na
 
     try {
       const url = editingNamespace
-        ? `/api/admin/namespaces/${editingNamespace.id}`
-        : `/api/admin/namespaces`;
+        ? `/admin/namespaces/${editingNamespace.id}`
+        : `/admin/namespaces`;
       const method = editingNamespace ? "PUT" : "POST";
 
       await api[method === "PUT" ? "put" : "post"](url, form);

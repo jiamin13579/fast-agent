@@ -46,7 +46,7 @@ export function clearAuth() {
 }
 
 export async function login(email: string, password: string): Promise<User> {
-  const res = await fetch(`${API_BASE}/api/auth/login`, {
+  const res = await fetch(`${API_BASE}/auth/login`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ email, password }),
@@ -69,7 +69,7 @@ export async function login(email: string, password: string): Promise<User> {
 
 export async function getCurrentUser(): Promise<{ user: User; namespaces: NamespaceInfo[] }> {
   const token = getToken();
-  const res = await fetch(`${API_BASE}/api/auth/me`, {
+  const res = await fetch(`${API_BASE}/auth/me`, {
     headers: { Authorization: `Bearer ${token}` },
   });
 

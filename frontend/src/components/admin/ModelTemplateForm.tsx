@@ -51,8 +51,8 @@ export function ModelTemplateForm({ open, onClose, onSuccess, editingTemplate }:
 
     try {
       const url = editingTemplate
-        ? `/api/admin/model-templates/${editingTemplate.id}`
-        : `/api/admin/model-templates`;
+        ? `/admin/model-templates/${editingTemplate.id}`
+        : `/admin/model-templates`;
       const method = editingTemplate ? "PUT" : "POST";
 
       await api[method === "PUT" ? "put" : "post"](url, form);
