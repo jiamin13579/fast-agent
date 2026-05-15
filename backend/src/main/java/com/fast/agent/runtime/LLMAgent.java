@@ -11,18 +11,22 @@ import com.fast.agent.runtime.tools.ToolRegistry;
 @Component
 public class LLMAgent {
 
-    @Autowired private LLMProvider llmAdapter;
+    @Autowired private LLMProviderFactory providerFactory;
 
     @Autowired private ToolRegistry toolRegistry;
 
     private static final int MAX_LOPS = 10;
+
+    private LLMProvider getProvider() {
+        return providerFactory.getDefaultProvider();
+    }
 
     public String process(String userMessage, List<Map<String, String>> history) {
         List<Map<String, String>> messages = new ArrayList<>(history);
         messages.add(Map.of("role", "user", "content", userMessage));
 
         for (int i = 0; i < MAX_LOPS; i++) {
-            LLMResponse response = llmAdapter.chat(messages);
+            LLMResponse response = getProvider().chat(messages);
 
             if (response.getToolCalls() == null || response.getToolCalls().isEmpty()) {
                 return response.getContent();
@@ -49,7 +53,7 @@ public class LLMAgent {
         messages.add(Map.of("role", "user", "content", userMessage));
 
         for (int i = 0; i < MAX_LOPS; i++) {
-            LLMResponse response = llmAdapter.chat(messages);
+            LLMResponse response = getProvider().chat(messages);
 
             if (response.getToolCalls() == null || response.getToolCalls().isEmpty()) {
                 return Flux.just(response.getContent());
@@ -76,7 +80,7 @@ public class LLMAgent {
         for (int i = 0; i < MAX_LOPS; i++) {
             callback.onProgress("Thinking...", Map.of("step", i, "total", MAX_LOPS));
 
-            LLMResponse response = llmAdapter.chat(messages);
+            LLMResponse response = getProvider().chat(messages);
 
             if (response.getToolCalls() == null || response.getToolCalls().isEmpty()) {
                 String content = response.getContent();
