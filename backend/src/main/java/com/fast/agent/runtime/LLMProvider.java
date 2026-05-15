@@ -8,6 +8,5 @@ public interface LLMProvider {
     String getName();
     String getModel();
 
-    LLMResponse chat(List<Map<String, String>> messages);
     Flux<String> chatStream(List<Map<String, String>> messages);
 }

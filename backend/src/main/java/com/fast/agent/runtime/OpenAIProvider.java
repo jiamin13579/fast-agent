@@ -2,7 +2,6 @@ package com.fast.agent.runtime;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import java.nio.charset.StandardCharsets;
 import java.util.*;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
@@ -36,25 +35,6 @@ public class OpenAIProvider implements LLMProvider {
     @Override
     public String getModel() {
         return model;
-    }
-
-    @Override
-    public LLMResponse chat(List<Map<String, String>> messages) {
-        Map<String, Object> body = new HashMap<>();
-        body.put("model", model);
-        body.put("messages", messages);
-
-        String response =
-                webClient
-                        .post()
-                        .uri("/v1/chat/completions")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .bodyValue(body)
-                        .retrieve()
-                        .bodyToMono(String.class)
-                        .block();
-
-        return parseResponse(response);
     }
 
     @Override
@@ -92,34 +72,5 @@ public class OpenAIProvider implements LLMProvider {
                     return "";
                 })
                 .filter(content -> !content.isEmpty());
-    }
-
-    private LLMResponse parseResponse(String response) {
-        LLMResponse llmResponse = new LLMResponse();
-        try {
-            JsonNode root = objectMapper.readTree(response);
-
-            JsonNode choices = root.get("choices");
-            if (choices != null && choices.isArray() && choices.size() > 0) {
-                JsonNode message = choices.get(0).get("message");
-                if (message != null && message.has("content")) {
-                    llmResponse.setContent(message.get("content").asText());
-                }
-
-                if (message.has("tool_calls")) {
-                    List<Map<String, String>> toolCalls = new ArrayList<>();
-                    for (JsonNode tc : message.get("tool_calls")) {
-                        Map<String, String> call = new HashMap<>();
-                        call.put("name", tc.get("function").get("name").asText());
-                        call.put("arguments", tc.get("function").get("arguments").asText());
-                        toolCalls.add(call);
-                    }
-                    llmResponse.setToolCalls(toolCalls);
-                }
-            }
-        } catch (Exception e) {
-            llmResponse.setContent("Error parsing response: " + e.getMessage());
-        }
-        return llmResponse;
     }
 }

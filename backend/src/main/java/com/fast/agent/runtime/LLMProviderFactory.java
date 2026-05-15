@@ -29,10 +29,9 @@ public class LLMProviderFactory {
     }
 
     public LLMProvider getProvider(String name) {
-        LLMProvider provider = providers.get(name);
-        if (provider == null) {
-            throw new IllegalArgumentException("LLM provider not found: " + name);
-        }
-        return provider;
+        return providers.values().stream()
+                .filter(p -> p.getName().equals(name))
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("LLM provider not found: " + name));
     }
 }

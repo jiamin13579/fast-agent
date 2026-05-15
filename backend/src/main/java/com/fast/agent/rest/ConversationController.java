@@ -17,7 +17,8 @@ public class ConversationController {
     @Autowired private ConversationService conversationService;
 
     @PostMapping("/{conversationUuid}/messages")
-    public Map<String, Object> sendMessage(
+    @ResponseStatus(HttpStatus.ACCEPTED)
+    public void sendMessage(
             @PathVariable String conversationUuid, @RequestBody Map<String, Object> request) {
         String content =
                 (String)
@@ -28,7 +29,7 @@ public class ConversationController {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "content 不能为空");
         }
         String clientMsgId = (String) request.get("client_msg_id");
-        return conversationService.send(conversationUuid, content, clientMsgId);
+        conversationService.send(conversationUuid, content, clientMsgId);
     }
 
     @GetMapping("/{conversationUuid}/messages")

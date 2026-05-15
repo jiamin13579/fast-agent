@@ -40,16 +40,6 @@ public class MockProvider implements LLMProvider {
     }
 
     @Override
-    public LLMResponse chat(List<Map<String, String>> messages) {
-        String userMsg = extractUserMessage(messages);
-        String response = matchResponse(userMsg);
-
-        LLMResponse llmResponse = new LLMResponse();
-        llmResponse.setContent(response);
-        return llmResponse;
-    }
-
-    @Override
     public Flux<String> chatStream(List<Map<String, String>> messages) {
         String userMsg = extractUserMessage(messages);
         String response = matchResponse(userMsg);
