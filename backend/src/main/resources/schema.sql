@@ -136,8 +136,9 @@ CREATE TABLE usage_log (
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- 管理员账号: admin@fast.com / 123456
 INSERT INTO `user` (email, phone, nickname, password, is_admin, status, must_change_password) VALUES
-('admin@fast.com', '13800000000', 'Admin', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', TRUE, 1, FALSE);
+('admin@fast.com', '13800000000', 'Admin', '$2a$10$g37MXvYIb6LthhtCyU7riOi2dD.mF6vE90DoUlPWczbTB07aWJR2m', TRUE, 1, FALSE);
 
 INSERT INTO namespace (code, name, description) VALUES ('default', '默认空间', '系统默认空间');
 
