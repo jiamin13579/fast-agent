@@ -12,20 +12,11 @@ import lombok.Data;
 public class ChatMessage {
     @TableId(type = IdType.AUTO)
     private Long id;
-    @TableField("conversation_id")
-    private Long conversationId;
+    private String uuid;
+    @TableField("conversation_uuid")
+    private String conversationUuid;
     private String role;
     private String content;
-    @TableField(exist = false)
-    private String model;
-    @TableField(exist = false)
-    private String audioUrl;
-    @TableField(exist = false)
-    private String imageUrls;
-    @TableField(exist = false)
-    private String tools;
-    @TableField(exist = false)
-    private String toolResults;
     @TableField("created_at")
     private LocalDateTime createdAt;
 }

@@ -9,6 +9,9 @@ spring:
     driver-class-name: com.mysql.cj.jdbc.Driver
   flyway:
     baseline-on-migrate: true
+    clean-on-validation-error: true
+    clean-disabled: false
+    validate-on-migrate: false
 
 mybatis-plus:
   configuration:

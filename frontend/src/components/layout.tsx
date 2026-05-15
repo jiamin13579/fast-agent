@@ -3,7 +3,8 @@
 import { createContext, useContext, useState, useEffect, useRef } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { MessageSquare, Sparkles, Clock, Key, Palette, LogOut } from "lucide-react";
+import { clearAuth } from "@/lib/auth";
+import { MessageSquare, Palette, LogOut, Sparkles } from "lucide-react";
 
 type View = "conversation" | "skills" | "tasks" | "llm" | "preferences";
 
@@ -21,9 +22,6 @@ export const useApp = () => useContext(AppContext);
 
 const navItems = [
   { id: "conversation" as View, icon: MessageSquare, label: "对话" },
-  { id: "skills" as View, icon: Sparkles, label: "技能" },
-  { id: "tasks" as View, icon: Clock, label: "任务" },
-  { id: "llm" as View, icon: Key, label: "LLM" },
   { id: "preferences" as View, icon: Palette, label: "偏好" },
 ];
 
@@ -77,10 +75,9 @@ function getInitials(name: string): string {
 
 export function HeaderRight() {
   const [isOpen, setIsOpen] = useState(false);
-  const [user, setUser] = useState<{ nickname: string; email: string; role: string } | null>(null);
+  const [user, setUser] = useState<{ nickname: string; email: string } | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const menuRef = useRef<HTMLDivElement>(null);
-  const router = useRouter();
 
   useEffect(() => {
     const controller = new AbortController();
@@ -115,19 +112,9 @@ export function HeaderRight() {
   }, []);
 
   const handleLogout = () => {
-    localStorage.removeItem("auth_token");
-    localStorage.removeItem("auth_user");
-    router.push("/login");
+    clearAuth();
+    window.location.href = "/login";
   };
-
-  if (isLoading) {
-    return (
-      <div className="flex items-center gap-2 px-4">
-        <div className="w-8 h-8 rounded-full bg-blue-100 animate-pulse" />
-        <div className="w-16 h-4 bg-blue-100 rounded animate-pulse" />
-      </div>
-    );
-  }
 
   return (
     <div className="relative" ref={menuRef}>
@@ -135,23 +122,16 @@ export function HeaderRight() {
         onClick={() => setIsOpen(!isOpen)}
         className="flex items-center gap-2 px-4 py-2 rounded-lg hover:bg-blue-50 transition-colors"
       >
-        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center text-white text-sm font-medium">
-          {getInitials(user?.nickname || "")}
+        <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center text-white text-sm font-medium shadow-md shadow-blue-200/50">
+          {getInitials(user?.nickname || "用")}
         </div>
-        <span className="text-sm text-blue-700">{user?.nickname || "用户"}</span>
-        <span className="text-blue-400 text-xs">{isOpen ? "▲" : "▼"}</span>
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-lg shadow-lg border border-blue-100 py-2 z-50">
-          <div className="px-4 py-2 border-b border-blue-50">
-            <div className="font-medium text-blue-800">{user?.nickname}</div>
-            <div className="text-xs text-blue-400">{user?.email}</div>
-            <div className="mt-1">
-              <span className="inline-block px-2 py-0.5 text-xs rounded-full bg-blue-100 text-blue-600">
-                {user?.role || "USER"}
-              </span>
-            </div>
+        <div className="absolute right-0 top-full mt-2 w-56 bg-white rounded-xl shadow-lg border border-blue-100 py-2 z-50">
+          <div className="px-4 py-3 border-b border-blue-50">
+            <div className="font-medium text-blue-800">{user?.nickname || "用户"}</div>
+            <div className="text-xs text-blue-400 mt-0.5">{user?.email}</div>
           </div>
           <button
             onClick={handleLogout}

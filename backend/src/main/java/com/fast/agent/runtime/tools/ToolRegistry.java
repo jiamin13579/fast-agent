@@ -1,4 +1,4 @@
-package com.fast.agent.engine.tools;
+package com.fast.agent.runtime.tools;
 
 import java.lang.reflect.Method;
 import java.util.*;
@@ -27,6 +27,20 @@ public class ToolRegistry {
         if (tm == null) return "Tool not found: " + name;
 
         try {
+            Object result = tm.method.invoke(tm.instance, args);
+            return result != null ? result.toString() : "OK";
+        } catch (Exception e) {
+            return "Error: " + e.getMessage();
+        }
+    }
+
+    public String execute(String name, String argsJson) {
+        ToolMethod tm = toolInstances.get(name);
+        if (tm == null) return "Tool not found: " + name;
+
+        try {
+            @SuppressWarnings("unchecked")
+            Map<String, Object> args = new com.fasterxml.jackson.databind.ObjectMapper().readValue(argsJson, Map.class);
             Object result = tm.method.invoke(tm.instance, args);
             return result != null ? result.toString() : "OK";
         } catch (Exception e) {

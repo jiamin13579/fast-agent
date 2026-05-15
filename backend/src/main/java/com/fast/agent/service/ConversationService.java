@@ -1,14 +1,17 @@
 package com.fast.agent.service;
 
-import com.fast.agent.engine.LLMAgent;
+import com.fast.agent.runtime.LLMAgent;
+import com.fast.agent.runtime.LLMClient;
 import com.fast.agent.entity.ChatMessage;
 import com.fast.agent.entity.Conversation;
 import com.fast.agent.repository.ChatMessageMapper;
 import com.fast.agent.repository.ConversationMapper;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import reactor.core.publisher.Flux;
 
 @Service
 public class ConversationService {
@@ -21,31 +24,44 @@ public class ConversationService {
 
     @Autowired private ChatMessageMapper chatMessageMapper;
 
-    public Map<String, Object> send(Long conversationId, String content) {
-        Conversation conversation = conversationMapper.findById(conversationId);
+    @Autowired private SocketIOPushService pushService;
+
+    public Map<String, Object> send(String conversationUuid, String content) {
+        Conversation conversation = conversationMapper.findByUuid(conversationUuid);
         if (conversation == null) {
-            throw new IllegalArgumentException("会话不存在: " + conversationId);
+            throw new IllegalArgumentException("会话不存在: " + conversationUuid);
         }
 
-        String response = generateResponse(conversationId, content);
+        String response = generateResponse(conversationUuid, content);
 
         ChatMessage userMsg = new ChatMessage();
-        userMsg.setConversationId(conversationId);
+        userMsg.setUuid(UUID.randomUUID().toString());
+        userMsg.setConversationUuid(conversationUuid);
         userMsg.setRole("user");
         userMsg.setContent(content);
         chatMessageMapper.insert(userMsg);
 
         ChatMessage assistantMsg = new ChatMessage();
-        assistantMsg.setConversationId(conversationId);
+        assistantMsg.setUuid(UUID.randomUUID().toString());
+        assistantMsg.setConversationUuid(conversationUuid);
         assistantMsg.setRole("assistant");
         assistantMsg.setContent(response);
+        assistantMsg.setCreatedAt(java.time.LocalDateTime.now());
         chatMessageMapper.insert(assistantMsg);
+
+        // Push new message to room
+        pushService.pushNewMessage(conversationUuid, Map.of(
+            "message_uuid", assistantMsg.getUuid(),
+            "role", "assistant",
+            "content", response,
+            "timestamp", assistantMsg.getCreatedAt() != null ? assistantMsg.getCreatedAt().toString() : ""
+        ));
 
         return Map.of("response", response);
     }
 
-    public String generateResponse(Long conversationId, String content) {
-        List<Map<String, String>> history = memoryService.getHistory(conversationId);
+    public String generateResponse(String conversationUuid, String content) {
+        List<Map<String, String>> history = memoryService.getHistory(conversationUuid);
         try {
             return llmAgent.process(content, history);
         } catch (Exception e) {
@@ -53,114 +69,73 @@ public class ConversationService {
         }
     }
 
-    public List<ChatMessage> getHistory(Long conversationId) {
-        return chatMessageMapper.findByConversationId(conversationId);
+    public Flux<String> streamResponse(String conversationUuid, String content) {
+        List<Map<String, String>> history = memoryService.getHistory(conversationUuid);
+        return llmAgent.processStreamFlux(content, history);
     }
 
-    public Map<String, Object> editMessage(Long messageId, String newContent) {
-        if (newContent == null || newContent.isBlank()) {
-            throw new IllegalArgumentException("content 不能为空");
-        }
-
-        ChatMessage target = chatMessageMapper.findById(messageId);
-        if (target == null || !"user".equals(target.getRole())) {
-            throw new IllegalArgumentException("只支持编辑用户消息");
-        }
-
-        List<ChatMessage> historyMessages = chatMessageMapper.findByConversationId(target.getConversationId());
-        int targetIndex = findMessageIndex(historyMessages, messageId);
-        if (targetIndex < 0) {
-            throw new IllegalArgumentException("消息不存在");
-        }
-
-        for (int i = targetIndex + 1; i < historyMessages.size(); i++) {
-            if ("user".equals(historyMessages.get(i).getRole())) {
-                throw new IllegalArgumentException("仅支持编辑最后一条用户消息");
-            }
-        }
-
-        target.setContent(newContent);
-        chatMessageMapper.update(target);
-
-        if (targetIndex + 1 < historyMessages.size()) {
-            ChatMessage maybeAssistant = historyMessages.get(targetIndex + 1);
-            if ("assistant".equals(maybeAssistant.getRole())) {
-                chatMessageMapper.deleteById(maybeAssistant.getId());
-            }
-        }
-
-        List<Map<String, String>> historyBefore = memoryService.getHistory(target.getConversationId());
-        if (!historyBefore.isEmpty()) {
-            historyBefore = historyBefore.subList(0, Math.max(0, historyBefore.size() - 1));
-        }
-
-        String response;
-        try {
-            response = llmAgent.process(newContent, historyBefore);
-        } catch (Exception e) {
-            response = "LLM 服务暂不可用，请检查 agent.llm 配置或网络后重试。";
-        }
-
-        ChatMessage assistantMsg = new ChatMessage();
-        assistantMsg.setConversationId(target.getConversationId());
-        assistantMsg.setRole("assistant");
-        assistantMsg.setContent(response);
-        chatMessageMapper.insert(assistantMsg);
-
-        return Map.of("success", true, "response", response);
-    }
-
-    public Map<String, Object> recallMessage(Long messageId) {
-        ChatMessage target = chatMessageMapper.findById(messageId);
-        if (target == null || !"user".equals(target.getRole())) {
-            throw new IllegalArgumentException("只支持撤回用户消息");
-        }
-
-        List<ChatMessage> historyMessages = chatMessageMapper.findByConversationId(target.getConversationId());
-        int targetIndex = findMessageIndex(historyMessages, messageId);
-        if (targetIndex < 0) {
-            throw new IllegalArgumentException("消息不存在");
-        }
-
-        for (int i = targetIndex + 1; i < historyMessages.size(); i++) {
-            if ("user".equals(historyMessages.get(i).getRole())) {
-                throw new IllegalArgumentException("仅支持撤回最后一条用户消息");
-            }
-        }
-
-        chatMessageMapper.deleteById(messageId);
-        if (targetIndex + 1 < historyMessages.size()) {
-            ChatMessage maybeAssistant = historyMessages.get(targetIndex + 1);
-            if ("assistant".equals(maybeAssistant.getRole())) {
-                chatMessageMapper.deleteById(maybeAssistant.getId());
-            }
-        }
-        return Map.of("success", true);
+    public List<ChatMessage> getHistory(String conversationUuid) {
+        return chatMessageMapper.findByConversationUuid(conversationUuid);
     }
 
     public Map<String, Object> createConversation(String name) {
         Conversation conversation = new Conversation();
+        conversation.setUuid(UUID.randomUUID().toString());
         conversation.setName(name == null || name.isBlank() ? "新会话" : name);
         conversationMapper.insert(conversation);
-        return Map.of("id", conversation.getId(), "conversation_id", conversation.getId(), "name", conversation.getName());
+
+        // Push sync for new conversation
+        pushService.pushSync(conversation.getUuid(), Map.of(
+            "action", "create",
+            "uuid", conversation.getUuid(),
+            "name", conversation.getName()
+        ));
+
+        return Map.of(
+                "uuid",
+                conversation.getUuid(),
+                "name",
+                conversation.getName());
     }
 
     public List<Conversation> listConversations() {
         return conversationMapper.findAll();
     }
 
-    public Map<String, Object> deleteConversation(Long conversationId) {
-        chatMessageMapper.deleteByConversationId(conversationId);
-        int deleted = conversationMapper.deleteById(conversationId);
-        return Map.of("success", deleted > 0);
+    public Map<String, Object> deleteConversation(String conversationUuid) {
+        chatMessageMapper.deleteByConversationUuid(conversationUuid);
+        Conversation conversation = conversationMapper.findByUuid(conversationUuid);
+        if (conversation != null) {
+            conversationMapper.deleteById(conversation.getId());
+        }
+
+        // Push sync for deleted conversation
+        pushService.pushSync(conversationUuid, Map.of(
+            "action", "delete",
+            "uuid", conversationUuid
+        ));
+
+        return Map.of("success", true);
     }
 
-    private int findMessageIndex(List<ChatMessage> messages, Long messageId) {
-        for (int i = 0; i < messages.size(); i++) {
-            if (messageId.equals(messages.get(i).getId())) {
-                return i;
-            }
+    public Map<String, Object> renameConversation(String conversationUuid, String name) {
+        if (name == null || name.isBlank()) {
+            throw new IllegalArgumentException("name 不能为空");
         }
-        return -1;
+        Conversation conversation = conversationMapper.findByUuid(conversationUuid);
+        if (conversation == null) {
+            throw new IllegalArgumentException("会话不存在: " + conversationUuid);
+        }
+        conversation.setName(name);
+        conversationMapper.updateById(conversation);
+
+        // Push sync for renamed conversation
+        pushService.pushSync(conversationUuid, Map.of(
+            "action", "rename",
+            "uuid", conversationUuid,
+            "name", name
+        ));
+
+        return Map.of("success", true, "name", name);
     }
 }

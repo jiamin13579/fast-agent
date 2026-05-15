@@ -1,12 +1,14 @@
-package com.fast.agent.engine;
+package com.fast.agent.runtime;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
+import reactor.core.publisher.Flux;
 
 @Component
 public class LLMClient {
@@ -48,12 +50,46 @@ public class LLMClient {
         return parseResponse(response);
     }
 
+    public Flux<String> chatStream(List<Map<String, String>> messages) {
+        Map<String, Object> body = new HashMap<>();
+        body.put("model", provider);
+        body.put("messages", messages);
+        body.put("stream", true);
+        body.put("stream_events", true);
+
+        return webClient
+                .post()
+                .uri("/v1/chat/completions")
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(body)
+                .retrieve()
+                .bodyToMono(String.class)
+                .flatMapMany(response -> Flux.fromArray(response.split("\n")))
+                .filter(line -> !line.isBlank())
+                .map(line -> {
+                    if (line.startsWith("data:")) {
+                        line = line.substring(5).trim();
+                    }
+                    if (line.isEmpty() || "[DONE]".equals(line)) return "";
+                    try {
+                        JsonNode root = objectMapper.readTree(line);
+                        JsonNode choices = root.get("choices");
+                        if (choices != null && choices.isArray() && choices.size() > 0) {
+                            JsonNode delta = choices.get(0).get("delta");
+                            if (delta != null && delta.has("content")) {
+                                return delta.get("content").asText();
+                            }
+                        }
+                    } catch (Exception ignored) {}
+                    return "";
+                });
+    }
+
     private LLMResponse parseResponse(String response) {
         LLMResponse llmResponse = new LLMResponse();
         try {
             JsonNode root = objectMapper.readTree(response);
 
-            // Extract content
             JsonNode choices = root.get("choices");
             if (choices != null && choices.isArray() && choices.size() > 0) {
                 JsonNode message = choices.get(0).get("message");
@@ -61,7 +97,6 @@ public class LLMClient {
                     llmResponse.setContent(message.get("content").asText());
                 }
 
-                // Extract tool calls if present (for function calling)
                 if (message.has("tool_calls")) {
                     List<Map<String, String>> toolCalls = new ArrayList<>();
                     for (JsonNode tc : message.get("tool_calls")) {

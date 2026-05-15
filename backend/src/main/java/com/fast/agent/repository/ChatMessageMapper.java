@@ -9,14 +9,14 @@ import org.apache.ibatis.annotations.Mapper;
 @Mapper
 public interface ChatMessageMapper extends BaseMapper<ChatMessage> {
 
-    default ChatMessage findById(Long id) {
-        return selectById(id);
+    default ChatMessage findByUuid(String uuid) {
+        return selectOne(Wrappers.<ChatMessage>lambdaQuery().eq(ChatMessage::getUuid, uuid));
     }
 
-    default List<ChatMessage> findByConversationId(Long conversationId) {
+    default List<ChatMessage> findByConversationUuid(String conversationUuid) {
         return selectList(
                 Wrappers.<ChatMessage>lambdaQuery()
-                        .eq(ChatMessage::getConversationId, conversationId)
+                        .eq(ChatMessage::getConversationUuid, conversationUuid)
                         .orderByAsc(ChatMessage::getCreatedAt));
     }
 
@@ -24,13 +24,9 @@ public interface ChatMessageMapper extends BaseMapper<ChatMessage> {
         return selectList(Wrappers.<ChatMessage>lambdaQuery().orderByDesc(ChatMessage::getCreatedAt));
     }
 
-    default int update(ChatMessage message) {
-        return updateById(message);
-    }
-
-    default int deleteByConversationId(Long conversationId) {
+    default int deleteByConversationUuid(String conversationUuid) {
         return delete(
                 Wrappers.<ChatMessage>lambdaQuery()
-                        .eq(ChatMessage::getConversationId, conversationId));
+                        .eq(ChatMessage::getConversationUuid, conversationUuid));
     }
 }
