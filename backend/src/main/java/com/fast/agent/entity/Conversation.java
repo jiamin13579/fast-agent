@@ -16,6 +16,12 @@ public class Conversation {
     private Long userId;
     private String uuid;
     private String name;
+    @TableField("agent_id")
+    private Long agentId;
+    @TableField("model_id")
+    private Long modelId;
+    @TableField("namespace_id")
+    private Long namespaceId;
     @TableField("created_at")
     private LocalDateTime createdAt;
     @TableField("updated_at")

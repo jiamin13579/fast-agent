@@ -1,13 +1,11 @@
 package com.fast.agent.init;
 
-import com.fast.agent.entity.Role;
 import com.fast.agent.entity.User;
 import com.fast.agent.repository.UserMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,43 +16,13 @@ public class DataInitializer implements CommandLineRunner {
 
     @Autowired private UserMapper userRepository;
 
-    @Autowired private PasswordEncoder passwordEncoder;
-
     @Override
     @Transactional
     public void run(String... args) {
-        if (!userRepository.findAll().isEmpty()) {
-            return; // 已有数据，跳过
+        if (!userRepository.selectList(null).isEmpty()) {
+            log.info("User data already exists, skipping initialization");
+            return;
         }
-
-        String defaultPassword = passwordEncoder.encode("123456");
-
-        User[] users = {
-            createUser("superadmin@example.com", "superadmin", Role.SUPER_ADMIN),
-            createUser("admin1@example.com", "管理员1", Role.ADMIN),
-            createUser("admin2@example.com", "管理员2", Role.ADMIN),
-            createUser("user1@example.com", "用户1", Role.USER),
-            createUser("user2@example.com", "用户2", Role.USER),
-            createUser("user3@example.com", "用户3", Role.USER)
-        };
-
-        for (User user : users) {
-            user.setPassword(defaultPassword);
-            user.setStatus(1);
-            user.setMustChangePassword(true);
-            userRepository.insert(user);
-        }
-
-        log.info("Initialized {} default users", users.length);
-    }
-
-    private User createUser(String email, String nickname, Role role) {
-        User user = new User();
-        user.setEmail(email);
-        user.setNickname(nickname);
-        user.setRole(role);
-        user.setCreateTime(java.time.LocalDateTime.now());
-        user.setUpdateTime(java.time.LocalDateTime.now());
-        return user;
+        log.info("No user data found — schema.sql should handle initial data");
     }
 }

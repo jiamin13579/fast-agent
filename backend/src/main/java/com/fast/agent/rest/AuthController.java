@@ -35,16 +35,7 @@ public class AuthController {
     public ResponseEntity<?> me(@RequestHeader("Authorization") String authHeader) {
         try {
             User user = authService.getCurrentUser(authHeader);
-            if (user.getRole() == null) {
-                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                        .body(Map.of("message", "用户角色未设置"));
-            }
-            return ResponseEntity.ok(
-                    Map.of(
-                            "id", user.getId(),
-                            "email", user.getEmail(),
-                            "nickname", user.getNickname(),
-                            "role", user.getRole().name()));
+            return ResponseEntity.ok(authService.me(user));
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(Map.of("message", e.getMessage()));

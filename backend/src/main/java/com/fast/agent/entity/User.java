@@ -14,7 +14,8 @@ public class User {
     private String phone;
     private String nickname;
     private String password;
-    private Role role;
+    @TableField("is_admin")
+    private Boolean isAdmin;
     private Integer status;
     @TableField("must_change_password")
     private Boolean mustChangePassword;
@@ -63,12 +64,12 @@ public class User {
         this.password = password;
     }
 
-    public Role getRole() {
-        return role;
+    public Boolean getIsAdmin() {
+        return isAdmin;
     }
 
-    public void setRole(Role role) {
-        this.role = role;
+    public void setIsAdmin(Boolean isAdmin) {
+        this.isAdmin = isAdmin;
     }
 
     public Integer getStatus() {
