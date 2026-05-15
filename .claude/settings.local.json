@@ -84,7 +84,8 @@
       "Bash(mvn dependency:tree -DincludeArtifactIds=netty-socketio)",
       "Bash(lsof -ti:8080)",
       "Bash(xargs kill *)",
-      "Bash(xargs -I{} grep -l \"\\\\.\" {})"
+      "Bash(xargs -I{} grep -l \"\\\\.\" {})",
+      "Bash(mvn test *)"
     ]
   }
 }
