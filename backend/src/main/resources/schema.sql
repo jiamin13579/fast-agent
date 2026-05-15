@@ -140,3 +140,34 @@ INSERT INTO `user` (email, phone, nickname, password, is_admin, status, must_cha
 ('admin@fast.com', '13800000000', 'Admin', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', TRUE, 1, FALSE);
 
 INSERT INTO namespace (code, name, description) VALUES ('default', '默认空间', '系统默认空间');
+
+-- Model Templates (全局模板)
+INSERT INTO model_template (name, provider, model_name, base_url, max_tokens, temperature, description) VALUES
+('MiniMax-ABI', 'minimax', 'MiniMax-ABI', 'https://api.minimax.chat/v1', 32000, 0.70, 'MiniMax ABI 模型，适合对话任务');
+
+-- 全局 LLM 模型 (namespace_id=0)
+INSERT INTO llm_model (namespace_id, name, provider, model_name, api_key, base_url, max_tokens, temperature, status) VALUES
+(0, 'MiniMax-M2.7', 'minimax', 'MiniMax-M2.7', 'YOUR_API_KEY', 'https://api.minimax.chat/v1', 32000, 0.70, 1),
+(0, 'GPT-4', 'openai', 'gpt-4', 'YOUR_API_KEY', 'https://api.openai.com/v1', 8192, 0.70, 1),
+(0, 'Claude-3', 'anthropic', 'claude-3-haiku-20240307', 'YOUR_API_KEY', 'https://api.anthropic.com/v1', 4096, 0.70, 1);
+
+-- 全局 Agent (namespace_id=0)
+INSERT INTO agent (namespace_id, name, description, system_prompt, status, version, created_by) VALUES
+(0, '私人助手', '通用对话助手', '你是一个友善且有用的AI助手。', 'https://api.minimax.chat/v1/avatar.jpg', 1, 1, 1);
+
+-- 绑定 Agent 资源 (Agent + Model)
+INSERT INTO agent_resource (agent_id, resource_type, resource_id) VALUES
+(1, 'MODEL', 1),
+(1, 'MODEL', 2),
+(1, 'MODEL', 3);
+
+-- Namespace 模型 (namespace_id=1, 默认空间)
+INSERT INTO llm_model (namespace_id, name, provider, model_name, api_key, base_url, max_tokens, temperature, status) VALUES
+(1, '默认模型', 'minimax', 'MiniMax-M2.7', 'YOUR_API_KEY', 'https://api.minimax.chat/v1', 32000, 0.70, 1);
+
+-- Namespace Agent (namespace_id=1)
+INSERT INTO agent (namespace_id, name, description, system_prompt, status, version, created_by) VALUES
+(1, '工作助手', '团队协作助手', '你是一个专注于团队协作和任务管理的AI助手。', 'https://api.minimax.chat/v1/avatar.jpg', 1, 1, 1);
+
+INSERT INTO agent_resource (agent_id, resource_type, resource_id) VALUES
+(2, 'MODEL', 4);
