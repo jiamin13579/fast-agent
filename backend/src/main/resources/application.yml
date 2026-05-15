@@ -2,16 +2,16 @@ server:
   port: 8080
 
 spring:
+  flyway:
+    enabled: false
+  sql:
+    init:
+      mode: always
   datasource:
     url: jdbc:mysql://43.134.96.44:3306/agent_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC&createDatabaseIfNotExist=true
     username: dbadmin
     password: Db@Adm123
     driver-class-name: com.mysql.cj.jdbc.Driver
-  flyway:
-    baseline-on-migrate: true
-    clean-on-validation-error: true
-    clean-disabled: false
-    validate-on-migrate: false
 
 mybatis-plus:
   configuration:
@@ -19,7 +19,6 @@ mybatis-plus:
 
 agent:
   cors:
-    # Optional comma-separated patterns. Empty means allow all origins by pattern.
     allowed-origin-patterns: ${CORS_ALLOWED_ORIGIN_PATTERNS:}
   jwt:
     secret: ${JWT_SECRET:my-super-secret-jwt-key-that-should-be-at-least-256-bits-long-for-hs256}
