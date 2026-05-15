@@ -11,7 +11,7 @@ import com.fast.agent.runtime.tools.ToolRegistry;
 @Component
 public class LLMAgent {
 
-    @Autowired private LLMClient llmAdapter;
+    @Autowired private LLMProvider llmAdapter;
 
     @Autowired private ToolRegistry toolRegistry;
 

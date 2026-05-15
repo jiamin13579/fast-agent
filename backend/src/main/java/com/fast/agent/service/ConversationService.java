@@ -1,7 +1,7 @@
 package com.fast.agent.service;
 
 import com.fast.agent.runtime.LLMAgent;
-import com.fast.agent.runtime.LLMClient;
+import com.fast.agent.runtime.LLMProvider;
 import com.fast.agent.entity.ChatMessage;
 import com.fast.agent.entity.Conversation;
 import com.fast.agent.repository.ChatMessageMapper;
@@ -29,7 +29,7 @@ public class ConversationService {
 
     @Autowired private SocketIOPushService pushService;
 
-    @Autowired private LLMClient llmClient;
+    @Autowired private LLMProvider llmClient;
 
     public Map<String, Object> send(String conversationUuid, String content, String clientMsgId) {
         Long currentUserId = getCurrentUserId();
