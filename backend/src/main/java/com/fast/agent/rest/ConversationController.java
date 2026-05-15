@@ -38,8 +38,12 @@ public class ConversationController {
     }
 
     @PostMapping
-    public Map<String, Object> createConversation(@RequestBody Map<String, String> request) {
-        return conversationService.createConversation(request.getOrDefault("name", "新会话"));
+    public Map<String, Object> createConversation(@RequestBody Map<String, Object> request) {
+        String name = (String) request.getOrDefault("name", "新会话");
+        Long agentId = request.get("agent_id") != null ? ((Number) request.get("agent_id")).longValue() : null;
+        Long modelId = request.get("model_id") != null ? ((Number) request.get("model_id")).longValue() : null;
+        Long namespaceId = request.get("namespace_id") != null ? ((Number) request.get("namespace_id")).longValue() : 0L;
+        return conversationService.createConversation(name, agentId, modelId, namespaceId);
     }
 
     @GetMapping

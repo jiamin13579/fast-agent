@@ -28,6 +28,18 @@ public class ConversationService {
     @Autowired private SocketIOPushService pushService;
 
     @Autowired private LLMProviderFactory providerFactory;
+    @Autowired private LlmModelService llmModelService;
+
+    private LLMProvider resolveProvider(Conversation conversation) {
+        if (conversation.getModelId() == null) {
+            return providerFactory.getDefaultProvider();
+        }
+        LlmModel modelConfig = llmModelService.getById(conversation.getModelId());
+        if (modelConfig == null) {
+            return providerFactory.getDefaultProvider();
+        }
+        return providerFactory.getProvider(modelConfig.getProvider());
+    }
 
     public void send(String conversationUuid, String content, String clientMsgId) {
         Long currentUserId = getCurrentUserId();
@@ -35,6 +47,8 @@ public class ConversationService {
         if (conversation == null) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "无权限");
         }
+
+        LLMProvider provider = resolveProvider(conversation);
 
         List<Map<String, String>> history = memoryService.getHistory(conversationUuid);
         List<Map<String, String>> messages = new ArrayList<>(history);
@@ -55,7 +69,7 @@ public class ConversationService {
         StringBuilder fullContent = new StringBuilder();
         String assistantMsgUuid = UUID.randomUUID().toString();
 
-        providerFactory.getDefaultProvider().chatStream(messages)
+        provider.chatStream(messages)
             .doOnNext(chunk -> {
                 fullContent.append(chunk);
                 pushService.pushStreamEvent(conversationUuid, Map.of(
@@ -105,25 +119,22 @@ public class ConversationService {
         return chatMessageMapper.findByConversationUuid(conversationUuid);
     }
 
-    public Map<String, Object> createConversation(String name) {
-        Long currentUserId = getCurrentUserId();
+    public Map<String, Object> createConversation(String name, Long agentId, Long modelId, Long namespaceId) {
         Conversation conversation = new Conversation();
-        conversation.setUserId(currentUserId);
         conversation.setUuid(UUID.randomUUID().toString());
-        conversation.setName(name == null || name.isBlank() ? "新会话" : name);
+        conversation.setName(name);
+        conversation.setUserId(getCurrentUserId());
+        conversation.setAgentId(agentId);
+        conversation.setModelId(modelId);
+        conversation.setNamespaceId(namespaceId);
         conversationMapper.insert(conversation);
 
-        pushService.pushSync(conversation.getUuid(), Map.of(
-            "action", "create",
-            "uuid", conversation.getUuid(),
-            "name", conversation.getName()
-        ));
-
         return Map.of(
-                "uuid",
-                conversation.getUuid(),
-                "name",
-                conversation.getName());
+                "uuid", conversation.getUuid(),
+                "name", conversation.getName(),
+                "agent_id", agentId,
+                "model_id", modelId,
+                "namespace_id", namespaceId);
     }
 
     public List<Conversation> listConversations() {
