@@ -8,7 +8,8 @@
     "build": "next build",
     "lint": "next lint",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "test:api": "vitest run tests/api/agent-platform.test.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.4.1",
@@ -28,10 +29,12 @@
   "devDependencies": {
     "@types/node": "^25.6.2",
     "@types/react": "19.2.14",
+    "@vitest/ui": "^4.1.6",
     "eslint": "^8.57.1",
     "eslint-config-next": "^14.2.35",
     "playwright": "^1.60.0",
     "prettier": "^3.6.2",
-    "typescript": "6.0.3"
+    "typescript": "6.0.3",
+    "vitest": "^4.1.6"
   }
 }

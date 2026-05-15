@@ -1,13 +1,14 @@
 "use client";
 
-import { createContext, useContext, useState, useEffect, useRef } from "react";
-import { usePathname, useRouter } from "next/navigation";
+import { createContext, useContext, useState, useEffect, useCallback } from "react";
+import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { clearAuth, getNamespaces, getUser, getToken, User, NamespaceInfo } from "@/lib/auth";
-import { MessageSquare, Palette, LogOut, Sparkles, Settings } from "lucide-react";
+import { clearAuth, getNamespaces, getUser, User, NamespaceInfo } from "@/lib/auth";
+import { getCurrentNamespaceId, setCurrentNamespaceId as saveNamespaceId } from "@/lib/api";
+import { MessageSquare, Palette, LogOut, Sparkles } from "lucide-react";
 import { NamespaceSwitcher } from "@/components/NamespaceSwitcher";
 
-type View = "conversation" | "skills" | "tasks" | "llm" | "preferences";
+type View = "conversation" | "preferences";
 
 interface AppContextType {
   view: View;
@@ -82,24 +83,10 @@ function getInitials(name: string): string {
 export function HeaderRight() {
   const [isOpen, setIsOpen] = useState(false);
   const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
   const { namespaces, currentNamespaceId, setCurrentNamespaceId, isAdmin } = useApp();
-  const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const u = getUser();
-    setUser(u);
-    setIsLoading(false);
-  }, []);
-
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-        setIsOpen(false);
-      }
-    }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    setUser(getUser());
   }, []);
 
   const handleLogout = () => {
@@ -116,7 +103,7 @@ export function HeaderRight() {
           onChange={setCurrentNamespaceId}
         />
       )}
-      <div className="relative" ref={menuRef}>
+      <div className="relative">
         <button
           onClick={() => setIsOpen(!isOpen)}
           className="flex items-center gap-2 px-4 py-2 rounded-lg hover:bg-blue-50 transition-colors"
@@ -156,16 +143,29 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const [isAdmin, setIsAdmin] = useState(false);
   const isLoginPage = pathname === "/login";
 
+  // Initialize from localStorage on mount
   useEffect(() => {
     const user = getUser();
     if (user) {
       setIsAdmin(user.isAdmin);
     }
-    setNamespaces(getNamespaces());
-    const savedNs = getNamespaces();
-    if (savedNs.length > 0) {
-      setCurrentNamespaceId(savedNs[0].id);
+    const storedNamespaces = getNamespaces();
+    setNamespaces(storedNamespaces);
+
+    // Load saved namespace or use first available
+    const savedId = getCurrentNamespaceId();
+    if (savedId > 0) {
+      setCurrentNamespaceId(savedId);
+    } else if (storedNamespaces.length > 0) {
+      const firstId = storedNamespaces[0].id;
+      setCurrentNamespaceId(firstId);
+      saveNamespaceId(firstId);
     }
+  }, []);
+
+  const handleSetNamespace = useCallback((id: number) => {
+    setCurrentNamespaceId(id);
+    saveNamespaceId(id);
   }, []);
 
   if (isLoginPage) {
@@ -173,7 +173,16 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <AppContext.Provider value={{ view, setView, currentNamespaceId, setCurrentNamespaceId, namespaces, isAdmin }}>
+    <AppContext.Provider
+      value={{
+        view,
+        setView,
+        currentNamespaceId,
+        setCurrentNamespaceId: handleSetNamespace,
+        namespaces,
+        isAdmin,
+      }}
+    >
       <div className="flex h-screen">
         <Sidebar />
         <div className="flex-1 flex flex-col">

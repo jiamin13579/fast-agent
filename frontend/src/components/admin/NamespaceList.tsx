@@ -2,8 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
-import { getToken } from "@/lib/auth";
-import { API_BASE } from "@/lib/config";
+import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -32,12 +31,7 @@ export function NamespaceList() {
 
   const fetchNamespaces = async () => {
     try {
-      const token = getToken();
-      const res = await fetch(`${API_BASE}/api/admin/namespaces`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (!res.ok) throw new Error("获取失败");
-      const data = await res.json();
+      const data = await api.get<Namespace[]>('/api/admin/namespaces');
       setNamespaces(data);
     } catch {
       toast.error("获取 Namespace 列表失败");
@@ -53,12 +47,7 @@ export function NamespaceList() {
   const handleDelete = async (id: number) => {
     if (!confirm("确定要删除吗？")) return;
     try {
-      const token = getToken();
-      const res = await fetch(`${API_BASE}/api/admin/namespaces/${id}`, {
-        method: "DELETE",
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (!res.ok) throw new Error("删除失败");
+      await api.delete(`/api/admin/namespaces/${id}`);
       toast.success("删除成功");
       fetchNamespaces();
     } catch {

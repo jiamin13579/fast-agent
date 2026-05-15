@@ -2,8 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
-import { getToken } from "@/lib/auth";
-import { API_BASE } from "@/lib/config";
+import { api } from "@/lib/api";
 import {
   Dialog,
   DialogContent,
@@ -49,13 +48,8 @@ export function ResourceBindingDialog({ agent, open, onClose }: ResourceBindingD
 
   const fetchModels = async () => {
     try {
-      const token = getToken();
       const nsId = agent.namespace_id || 0;
-      const res = await fetch(`${API_BASE}/api/admin/models?namespace_id=${nsId}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (!res.ok) throw new Error("获取模型失败");
-      const data = await res.json();
+      const data = await api.get<Model[]>(`/api/admin/models?namespace_id=${nsId}`);
       setModels(data);
     } catch {
       toast.error("获取模型列表失败");
@@ -64,12 +58,7 @@ export function ResourceBindingDialog({ agent, open, onClose }: ResourceBindingD
 
   const fetchBoundResources = async () => {
     try {
-      const token = getToken();
-      const res = await fetch(`${API_BASE}/api/admin/agents/${agent.id}/resources`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (!res.ok) throw new Error("获取绑定资源失败");
-      const data = await res.json();
+      const data = await api.get<BoundResource[]>(`/api/admin/agents/${agent.id}/resources`);
       setBoundResources(data);
     } catch {
       toast.error("获取绑定资源失败");
@@ -86,16 +75,7 @@ export function ResourceBindingDialog({ agent, open, onClose }: ResourceBindingD
   const handleBind = async (resourceType: string, resourceId: number) => {
     setBinding(true);
     try {
-      const token = getToken();
-      const res = await fetch(`${API_BASE}/api/admin/agents/${agent.id}/resources`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ resource_type: resourceType, resource_id: resourceId }),
-      });
-      if (!res.ok) throw new Error("绑定失败");
+      await api.post(`/api/admin/agents/${agent.id}/resources`, { resource_type: resourceType, resource_id: resourceId });
       toast.success("绑定成功");
       fetchBoundResources();
     } catch (err: any) {
@@ -107,15 +87,7 @@ export function ResourceBindingDialog({ agent, open, onClose }: ResourceBindingD
 
   const handleUnbind = async (resourceId: number, resourceType: string) => {
     try {
-      const token = getToken();
-      const res = await fetch(
-        `${API_BASE}/api/admin/agents/${agent.id}/resources/${resourceId}?type=${resourceType}`,
-        {
-          method: "DELETE",
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
-      if (!res.ok) throw new Error("解绑失败");
+      await api.delete(`/api/admin/agents/${agent.id}/resources/${resourceId}?type=${resourceType}`);
       toast.success("解绑成功");
       fetchBoundResources();
     } catch (err: any) {

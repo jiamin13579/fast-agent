@@ -3,8 +3,8 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useApp } from "@/components/layout";
+import { api } from "@/lib/api";
 import { clearAuth, getToken } from "@/lib/auth";
-import { API_BASE } from "@/lib/config";
 import { joinRoom, leaveRoom, onEvent, offEvent } from "@/lib/socket";
 import { cn } from "@/lib/utils";
 import {
@@ -16,7 +16,6 @@ import {
   ChevronLeft,
   Menu,
   Pencil,
-  Undo2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -57,14 +56,6 @@ interface MessageDto {
   createdAt?: string;
 }
 
-function buildAuthHeaders(includeJson = false): HeadersInit {
-  const token = getToken();
-  const headers: Record<string, string> = {};
-  if (includeJson) headers["Content-Type"] = "application/json";
-  if (token) headers.Authorization = `Bearer ${token}`;
-  return headers;
-}
-
 // ============ CONVERSATION VIEW ============
 function ConversationView() {
   const { currentNamespaceId, isAdmin } = useApp();
@@ -73,9 +64,6 @@ function ConversationView() {
   const [conversationUuid, setConversationUuid] = useState<string | null>(null);
   const [conversations, setConversations] = useState<ConversationItem[]>([]);
   const [loading, setLoading] = useState(false);
-  const [editingMessageUuid, setEditingMessageUuid] = useState<string | null>(null);
-  const [editingContent, setEditingContent] = useState("");
-  const [actionLoading, setActionLoading] = useState(false);
   const [loadingConversations, setLoadingConversations] = useState(true);
   const [conversationListCollapsed, setConversationListCollapsed] = useState(false);
   const [editingConversationUuid, setEditingConversationUuid] = useState<string | null>(null);
@@ -151,8 +139,8 @@ function ConversationView() {
   // Load agents when namespace changes
   useEffect(() => {
     if (!currentNamespaceId) return;
-    fetch(`${API_BASE}/agents?namespace_id=${currentNamespaceId}`, { headers: buildAuthHeaders() })
-      .then(r => r.json()).then(data => {
+    api.get<{ id: number; name: string }[]>(`/api/agents?namespace_id=${currentNamespaceId}`)
+      .then(data => {
         setAgents(data);
         if (data.length > 0) setSelectedAgentId(data[0].id);
       }).catch(console.error);
@@ -161,13 +149,13 @@ function ConversationView() {
   // Load models when agent changes
   useEffect(() => {
     if (!selectedAgentId) return;
-    fetch(`${API_BASE}/agents/${selectedAgentId}/resources?type=MODEL`, { headers: buildAuthHeaders() })
-      .then(r => r.json()).then(data => {
-        const modelIds = data.map((r: { resource_id: number }) => r.resource_id);
+    api.get<{ resource_id: number }[]>(`/api/agents/${selectedAgentId}/resources?type=MODEL`)
+      .then(data => {
+        const modelIds = data.map((r) => r.resource_id);
         if (isAdmin && modelIds.length > 0) {
-          fetch(`${API_BASE}/admin/models?namespace_id=${currentNamespaceId}`, { headers: buildAuthHeaders() })
-            .then(r => r.json()).then(allModels => {
-              const filtered = allModels.filter((m: { id: number }) => modelIds.includes(m.id));
+          api.get<{ id: number; name: string }[]>(`/api/admin/models?namespace_id=${currentNamespaceId}`)
+            .then(allModels => {
+              const filtered = allModels.filter((m) => modelIds.includes(m.id));
               setAvailableModels(filtered);
             }).catch(() => setAvailableModels(modelIds.map((id: number) => ({ id, name: `模型 ${id}` }))));
         } else {
@@ -186,11 +174,7 @@ function ConversationView() {
     setConversationUuid(uuid);
     setMessages([]);
     try {
-      const res = await fetch(`${API_BASE}/conversations/${uuid}/messages`, {
-        headers: buildAuthHeaders(),
-      });
-      if (!res.ok) throw new Error("加载历史失败");
-      const data: MessageDto[] = await res.json();
+      const data: MessageDto[] = await api.get(`/api/conversations/${uuid}/messages`);
       setMessages(
         data.map((m) => ({
           uuid: m.uuid,
@@ -207,21 +191,17 @@ function ConversationView() {
   const loadConversations = useCallback(async () => {
     setLoadingConversations(true);
     try {
-      const res = await fetch(`${API_BASE}/conversations`, {
-        headers: buildAuthHeaders(),
-      });
-      if (res.status === 401 || res.status === 403) {
-        clearAuth();
-        window.location.href = "/login";
-        return;
-      }
-      if (!res.ok) throw new Error("加载会话失败");
-      const data = await res.json();
+      const data = await api.get<ConversationItem[]>("/api/conversations");
       setConversations(data);
       if (data.length > 0) {
         await selectConversation(data[0].uuid);
       }
-    } catch {
+    } catch (e) {
+      if (e instanceof Error && (e.message.includes("401") || e.message.includes("403"))) {
+        clearAuth();
+        window.location.href = "/login";
+        return;
+      }
       toast.error("加载会话失败");
     } finally {
       setLoadingConversations(false);
@@ -234,18 +214,12 @@ function ConversationView() {
 
   const createConversation = async () => {
     try {
-      const res = await fetch(`${API_BASE}/conversations`, {
-        method: "POST",
-        headers: buildAuthHeaders(true),
-        body: JSON.stringify({
-          name: "新对话",
-          agent_id: selectedAgentId,
-          model_id: selectedModelId,
-          namespace_id: currentNamespaceId,
-        }),
+      const conversation = await api.post<ConversationItem>("/api/conversations", {
+        name: "新对话",
+        agent_id: selectedAgentId,
+        model_id: selectedModelId,
+        namespace_id: currentNamespaceId,
       });
-      if (!res.ok) throw new Error("创建失败");
-      const conversation = await res.json();
       setConversations((prev) => [...prev, conversation]);
       selectConversation(conversation.uuid);
     } catch {
@@ -256,11 +230,7 @@ function ConversationView() {
   const deleteConversation = async (e: React.MouseEvent, conversationUuidToDelete: string) => {
     e.stopPropagation();
     try {
-      const res = await fetch(`${API_BASE}/conversations/${conversationUuidToDelete}`, {
-        method: "DELETE",
-        headers: buildAuthHeaders(),
-      });
-      if (!res.ok) throw new Error("删除失败");
+      await api.delete(`/api/conversations/${conversationUuidToDelete}`);
       const newConversations = conversations.filter((c) => c.uuid !== conversationUuidToDelete);
       setConversations(newConversations);
       if (conversationUuid === conversationUuidToDelete && newConversations.length > 0) {
@@ -283,12 +253,7 @@ function ConversationView() {
   const saveRenameConversation = async () => {
     if (!editingConversationUuid || !editingConversationName.trim()) return;
     try {
-      const res = await fetch(`${API_BASE}/conversations/${editingConversationUuid}`, {
-        method: "PUT",
-        headers: buildAuthHeaders(true),
-        body: JSON.stringify({ name: editingConversationName.trim() }),
-      });
-      if (!res.ok) throw new Error("重命名失败");
+      await api.put(`/api/conversations/${editingConversationUuid}`, { name: editingConversationName.trim() });
       setConversations((prev) =>
         prev.map((c) =>
           c.uuid === editingConversationUuid ? { ...c, name: editingConversationName.trim() } : c
@@ -330,12 +295,7 @@ function ConversationView() {
 
     // Send via HTTP
     try {
-      const res = await fetch(`${API_BASE}/conversations/${conversationUuid}/messages`, {
-        method: "POST",
-        headers: buildAuthHeaders(true),
-        body: JSON.stringify({ content: textToSend, client_msg_id: assistantMsgId }),
-      });
-      if (!res.ok) throw new Error("Failed to send message");
+      await api.post(`/api/conversations/${conversationUuid}/messages`, { content: textToSend, client_msg_id: assistantMsgId });
     } catch (e) {
       console.error("Send message error:", e);
       setMessages((prev) => {
@@ -377,45 +337,6 @@ function ConversationView() {
   };
 
   const lastUserMessageUuid = getLastUserMessageUuid();
-
-  const recallMessage = async (messageUuid: string) => {
-    if (!conversationUuid) return;
-    setActionLoading(true);
-    try {
-      const res = await fetch(`${API_BASE}/conversation/message/${messageUuid}/recall`, {
-        method: "DELETE",
-        headers: buildAuthHeaders(),
-      });
-      if (!res.ok) throw new Error("撤回失败");
-      await selectConversation(conversationUuid);
-      toast.success("已撤回");
-    } catch (e) {
-      toast.error((e as Error).message || "撤回失败");
-    } finally {
-      setActionLoading(false);
-    }
-  };
-
-  const saveEditMessage = async (messageUuid: string) => {
-    if (!conversationUuid || !editingContent.trim()) return;
-    setActionLoading(true);
-    try {
-      const res = await fetch(`${API_BASE}/conversation/message/${messageUuid}/edit`, {
-        method: "PUT",
-        headers: buildAuthHeaders(true),
-        body: JSON.stringify({ content: editingContent.trim() }),
-      });
-      if (!res.ok) throw new Error("编辑失败");
-      setEditingMessageUuid(null);
-      setEditingContent("");
-      await selectConversation(conversationUuid);
-      toast.success("已更新");
-    } catch (e) {
-      toast.error((e as Error).message || "编辑失败");
-    } finally {
-      setActionLoading(false);
-    }
-  };
 
   return (
     <div className="flex flex-1 h-full min-h-0">
@@ -625,62 +546,8 @@ function ConversationView() {
                           : "bg-white text-blue-700 rounded-bl-md border border-blue-100"
                       )}
                     >
-                      {editingMessageUuid === message.uuid ? (
-                        <div className="space-y-2">
-                          <textarea
-                            value={editingContent}
-                            onChange={(e) => setEditingContent(e.target.value)}
-                            className="w-full min-h-20 resize-none rounded-lg p-2 text-sm text-blue-700 bg-white"
-                          />
-                          <div className="flex gap-2 justify-end">
-                            <Button
-                              size="sm"
-                              variant="secondary"
-                              onClick={() => {
-                                setEditingMessageUuid(null);
-                                setEditingContent("");
-                              }}
-                            >
-                              取消
-                            </Button>
-                            <Button
-                              size="sm"
-                              onClick={() => saveEditMessage(message.uuid)}
-                              disabled={actionLoading || !editingContent.trim()}
-                            >
-                              保存
-                            </Button>
-                          </div>
-                        </div>
-                      ) : (
-                        message.content
-                      )}
+                      {message.content}
                     </div>
-                    {message.role === "user" &&
-                      message.uuid === lastUserMessageUuid &&
-                      editingMessageUuid !== message.uuid && (
-                        <div className="flex items-center gap-2 mt-1.5">
-                          <button
-                            onClick={() => {
-                              setEditingMessageUuid(message.uuid);
-                              setEditingContent(message.content);
-                            }}
-                            className="text-[10px] text-blue-400/80 hover:text-blue-600 transition-colors inline-flex items-center gap-1"
-                            disabled={actionLoading || loading}
-                          >
-                            <Pencil className="h-3 w-3" />
-                            编辑
-                          </button>
-                          <button
-                            onClick={() => recallMessage(message.uuid)}
-                            className="text-[10px] text-blue-400/80 hover:text-red-500 transition-colors inline-flex items-center gap-1"
-                            disabled={actionLoading || loading}
-                          >
-                            <Undo2 className="h-3 w-3" />
-                            撤回
-                          </button>
-                        </div>
-                      )}
                     {message.createdAt && (
                       <span className="text-[10px] text-blue-400/60 mt-1.5 px-1">
                         {formatTime(message.createdAt)}

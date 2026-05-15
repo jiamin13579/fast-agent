@@ -2,8 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
-import { getToken } from "@/lib/auth";
-import { API_BASE } from "@/lib/config";
+import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -34,12 +33,7 @@ export function ModelTemplateList() {
 
   const fetchTemplates = async () => {
     try {
-      const token = getToken();
-      const res = await fetch(`${API_BASE}/api/admin/model-templates`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (!res.ok) throw new Error("获取失败");
-      const data = await res.json();
+      const data = await api.get<ModelTemplate[]>('/api/admin/model-templates');
       setTemplates(data);
     } catch {
       toast.error("获取模型模板列表失败");
@@ -55,12 +49,7 @@ export function ModelTemplateList() {
   const handleDelete = async (id: number) => {
     if (!confirm("确定要删除吗？")) return;
     try {
-      const token = getToken();
-      const res = await fetch(`${API_BASE}/api/admin/model-templates/${id}`, {
-        method: "DELETE",
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (!res.ok) throw new Error("删除失败");
+      await api.delete(`/api/admin/model-templates/${id}`);
       toast.success("删除成功");
       fetchTemplates();
     } catch {

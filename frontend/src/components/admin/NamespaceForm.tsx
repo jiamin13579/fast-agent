@@ -2,8 +2,7 @@
 
 import { useState } from "react";
 import { toast } from "sonner";
-import { getToken } from "@/lib/auth";
-import { API_BASE } from "@/lib/config";
+import { api } from "@/lib/api";
 import {
   Dialog,
   DialogContent,
@@ -44,26 +43,12 @@ export function NamespaceForm({ open, onClose, onSuccess, editingNamespace }: Na
     setLoading(true);
 
     try {
-      const token = getToken();
       const url = editingNamespace
-        ? `${API_BASE}/api/admin/namespaces/${editingNamespace.id}`
-        : `${API_BASE}/api/admin/namespaces`;
+        ? `/api/admin/namespaces/${editingNamespace.id}`
+        : `/api/admin/namespaces`;
       const method = editingNamespace ? "PUT" : "POST";
 
-      const res = await fetch(url, {
-        method,
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(form),
-      });
-
-      if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.message || "操作失败");
-      }
-
+      await api[method === "PUT" ? "put" : "post"](url, form);
       toast.success(editingNamespace ? "更新成功" : "创建成功");
       onSuccess();
       onClose();
