@@ -27,7 +27,8 @@ public class ConversationController {
         if (content == null || content.isBlank()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "content 不能为空");
         }
-        return conversationService.send(conversationUuid, content);
+        String clientMsgId = (String) request.get("client_msg_id");
+        return conversationService.send(conversationUuid, content, clientMsgId);
     }
 
     @GetMapping("/{conversationUuid}/messages")

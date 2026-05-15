@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
@@ -11,6 +12,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Flux;
 
 @Component
+@Slf4j
 public class LLMClient {
 
     private final String provider;
@@ -55,7 +57,6 @@ public class LLMClient {
         body.put("model", provider);
         body.put("messages", messages);
         body.put("stream", true);
-        body.put("stream_events", true);
 
         return webClient
                 .post()
@@ -63,14 +64,13 @@ public class LLMClient {
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue(body)
                 .retrieve()
-                .bodyToMono(String.class)
-                .flatMapMany(response -> Flux.fromArray(response.split("\n")))
+                .bodyToFlux(String.class)
+                .flatMap(data -> Flux.fromArray(data.split("\n")))
                 .filter(line -> !line.isBlank())
+                .filter(line -> line.startsWith("data:"))
+                .map(line -> line.substring(5).trim())
+                .filter(line -> !"[DONE]".equals(line))
                 .map(line -> {
-                    if (line.startsWith("data:")) {
-                        line = line.substring(5).trim();
-                    }
-                    if (line.isEmpty() || "[DONE]".equals(line)) return "";
                     try {
                         JsonNode root = objectMapper.readTree(line);
                         JsonNode choices = root.get("choices");
@@ -80,9 +80,12 @@ public class LLMClient {
                                 return delta.get("content").asText();
                             }
                         }
-                    } catch (Exception ignored) {}
+                    } catch (Exception e) {
+                        log.warn("Failed to parse SSE chunk: {}", e.getMessage());
+                    }
                     return "";
-                });
+                })
+                .filter(content -> !content.isEmpty());
     }
 
     private LLMResponse parseResponse(String response) {

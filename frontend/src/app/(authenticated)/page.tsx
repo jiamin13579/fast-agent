@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useApp } from "@/components/layout";
 import { clearAuth, getToken } from "@/lib/auth";
 import { API_BASE } from "@/lib/config";
-import { getSocket, joinRoom, leaveRoom, onEvent, offEvent } from "@/lib/socket";
+import { joinRoom, leaveRoom, onEvent, offEvent } from "@/lib/socket";
 import { cn } from "@/lib/utils";
 import {
   Send,
@@ -111,36 +111,15 @@ function ConversationView() {
 
   // Socket event handling
   useEffect(() => {
-    const handleNewMessage = (...args: unknown[]) => {
+    const handleStreamEvent = (...args: unknown[]) => {
       const data = args[0] as Record<string, unknown>;
       handleWsMessage(data);
     };
 
-    const handleStreamChunk = (...args: unknown[]) => {
-      const data = args[0] as Record<string, unknown>;
-      handleWsMessage(data);
-    };
-
-    const handleAgentProgress = (...args: unknown[]) => {
-      const data = args[0] as Record<string, unknown>;
-      handleWsMessage(data);
-    };
-
-    const handleSync = (...args: unknown[]) => {
-      const data = args[0] as Record<string, unknown>;
-      handleWsMessage(data);
-    };
-
-    onEvent("new_message", handleNewMessage);
-    onEvent("stream_chunk", handleStreamChunk);
-    onEvent("agent_progress", handleAgentProgress);
-    onEvent("sync", handleSync);
+    onEvent("stream_event", handleStreamEvent);
 
     return () => {
-      offEvent("new_message", handleNewMessage);
-      offEvent("stream_chunk", handleStreamChunk);
-      offEvent("agent_progress", handleAgentProgress);
-      offEvent("sync", handleSync);
+      offEvent("stream_event", handleStreamEvent);
     };
   }, [handleWsMessage]);
 

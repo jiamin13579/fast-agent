@@ -23,7 +23,12 @@ public class SocketIOPushService {
             return;
         }
         try {
-            socketIOServer.getNamespace("/").getRoomOperations(room).sendEvent(event, data);
+            var ns = socketIOServer.getNamespace("");
+            if (ns == null) {
+                log.warn("Namespace not found for room: {}", room);
+                return;
+            }
+            ns.getRoomOperations(room).sendEvent(event, data);
         } catch (Exception e) {
             log.error("Failed to push event {} to room {}: {}", event, room, e.getMessage());
         }
@@ -54,5 +59,9 @@ public class SocketIOPushService {
             "message_uuid", messageUuid,
             "full_content", fullContent
         ));
+    }
+
+    public void pushStreamEvent(String conversationUuid, Map<String, Object> data) {
+        pushToRoom("conversation:" + conversationUuid, "stream_event", data);
     }
 }

@@ -13,22 +13,17 @@ import org.springframework.stereotype.Component;
 @Slf4j
 public class ConversationSocketIOHandler {
 
-    // Reserving for future message handling integration
-    @SuppressWarnings("unused")
     private final ConversationService conversationService;
-    @SuppressWarnings("unused")
     private final SocketIOPushService pushService;
 
     @OnEvent("join")
     public void onJoin(SocketIOClient client, String room) {
         client.joinRoom(room);
-        log.info("Client {} joined room: {}", client.getSessionId(), room);
     }
 
     @OnEvent("leave")
     public void onLeave(SocketIOClient client, String room) {
         client.leaveRoom(room);
-        log.info("Client {} left room: {}", client.getSessionId(), room);
     }
 
     @OnEvent("auth")

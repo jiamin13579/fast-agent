@@ -6,6 +6,7 @@ import com.fast.agent.entity.ChatMessage;
 import com.fast.agent.entity.Conversation;
 import com.fast.agent.repository.ChatMessageMapper;
 import com.fast.agent.repository.ConversationMapper;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -26,13 +27,17 @@ public class ConversationService {
 
     @Autowired private SocketIOPushService pushService;
 
-    public Map<String, Object> send(String conversationUuid, String content) {
+    @Autowired private LLMClient llmClient;
+
+    public Map<String, Object> send(String conversationUuid, String content, String clientMsgId) {
         Conversation conversation = conversationMapper.findByUuid(conversationUuid);
         if (conversation == null) {
             throw new IllegalArgumentException("会话不存在: " + conversationUuid);
         }
 
-        String response = generateResponse(conversationUuid, content);
+        List<Map<String, String>> history = memoryService.getHistory(conversationUuid);
+        List<Map<String, String>> messages = new ArrayList<>(history);
+        messages.add(Map.of("role", "user", "content", content));
 
         ChatMessage userMsg = new ChatMessage();
         userMsg.setUuid(UUID.randomUUID().toString());
@@ -41,20 +46,58 @@ public class ConversationService {
         userMsg.setContent(content);
         chatMessageMapper.insert(userMsg);
 
+        pushService.pushStreamEvent(conversationUuid, Map.of(
+            "type", "start",
+            "client_msg_id", clientMsgId
+        ));
+
+        StringBuilder fullContent = new StringBuilder();
+        String assistantMsgUuid = UUID.randomUUID().toString();
+
+        try {
+            llmClient.chatStream(messages)
+                .doOnNext(chunk -> {
+                    fullContent.append(chunk);
+                    pushService.pushStreamEvent(conversationUuid, Map.of(
+                        "type", "chunk",
+                        "content", chunk,
+                        "client_msg_id", clientMsgId
+                    ));
+                })
+                .blockLast();
+        } catch (Exception e) {
+            String partial = fullContent.toString();
+            if (!partial.isEmpty()) {
+                ChatMessage partialMsg = new ChatMessage();
+                partialMsg.setUuid(assistantMsgUuid);
+                partialMsg.setConversationUuid(conversationUuid);
+                partialMsg.setRole("assistant");
+                partialMsg.setContent(partial);
+                partialMsg.setCreatedAt(java.time.LocalDateTime.now());
+                chatMessageMapper.insert(partialMsg);
+            }
+            pushService.pushStreamEvent(conversationUuid, Map.of(
+                "type", "error",
+                "message", e.getMessage(),
+                "client_msg_id", clientMsgId
+            ));
+            return Map.of("response", partial);
+        }
+
+        String response = fullContent.toString();
+
         ChatMessage assistantMsg = new ChatMessage();
-        assistantMsg.setUuid(UUID.randomUUID().toString());
+        assistantMsg.setUuid(assistantMsgUuid);
         assistantMsg.setConversationUuid(conversationUuid);
         assistantMsg.setRole("assistant");
         assistantMsg.setContent(response);
         assistantMsg.setCreatedAt(java.time.LocalDateTime.now());
         chatMessageMapper.insert(assistantMsg);
 
-        // Push new message to room
-        pushService.pushNewMessage(conversationUuid, Map.of(
-            "message_uuid", assistantMsg.getUuid(),
-            "role", "assistant",
-            "content", response,
-            "timestamp", assistantMsg.getCreatedAt() != null ? assistantMsg.getCreatedAt().toString() : ""
+        pushService.pushStreamEvent(conversationUuid, Map.of(
+            "type", "done",
+            "message_uuid", assistantMsgUuid,
+            "client_msg_id", clientMsgId
         ));
 
         return Map.of("response", response);
