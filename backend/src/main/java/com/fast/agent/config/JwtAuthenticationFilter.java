@@ -24,23 +24,39 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
 
-        String authHeader = request.getHeader("Authorization");
+        try {
+            String authHeader = request.getHeader("Authorization");
 
-        if (authHeader != null && authHeader.startsWith("Bearer ")) {
-            String token = authHeader.substring(7);
-            if (jwtUtil.validateToken(token)) {
-                var claims = jwtUtil.parseToken(token);
-                String role = claims.get("role", String.class);
-                UsernamePasswordAuthenticationToken auth =
-                        new UsernamePasswordAuthenticationToken(
-                                claims.getSubject(),
-                                null,
-                                Collections.singletonList(
-                                        new SimpleGrantedAuthority("ROLE_" + role)));
-                SecurityContextHolder.getContext().setAuthentication(auth);
+            if (authHeader != null && authHeader.startsWith("Bearer ")) {
+                String token = authHeader.substring(7);
+                if (jwtUtil.validateToken(token)) {
+                    var claims = jwtUtil.parseToken(token);
+                    Long userId = Long.parseLong(claims.getSubject());
+                    Boolean isAdmin = claims.get("isAdmin", Boolean.class);
+                    if (isAdmin == null) isAdmin = false;
+
+                    String namespaceHeader = request.getHeader("X-Namespace-Id");
+                    Long namespaceId = 0L;
+                    if (namespaceHeader != null) {
+                        namespaceId = Long.parseLong(namespaceHeader);
+                    }
+
+                    NamespaceContext.set(namespaceId, userId, isAdmin);
+
+                    String role = isAdmin ? "ADMIN" : "USER";
+                    UsernamePasswordAuthenticationToken auth =
+                            new UsernamePasswordAuthenticationToken(
+                                    claims.getSubject(),
+                                    null,
+                                    Collections.singletonList(
+                                            new SimpleGrantedAuthority("ROLE_" + role)));
+                    SecurityContextHolder.getContext().setAuthentication(auth);
+                }
             }
-        }
 
-        filterChain.doFilter(request, response);
+            filterChain.doFilter(request, response);
+        } finally {
+            NamespaceContext.clear();
+        }
     }
 }
