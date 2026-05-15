@@ -13,8 +13,17 @@ public interface ConversationMapper extends BaseMapper<Conversation> {
         return selectOne(Wrappers.<Conversation>lambdaQuery().eq(Conversation::getUuid, uuid));
     }
 
-    default List<Conversation> findAll() {
+    default List<Conversation> findByUserId(Long userId) {
         return selectList(
-                Wrappers.<Conversation>lambdaQuery().orderByDesc(Conversation::getCreatedAt));
+                Wrappers.<Conversation>lambdaQuery()
+                        .eq(Conversation::getUserId, userId)
+                        .orderByDesc(Conversation::getCreatedAt));
+    }
+
+    default Conversation findByUuidAndUserId(String uuid, Long userId) {
+        return selectOne(
+                Wrappers.<Conversation>lambdaQuery()
+                        .eq(Conversation::getUuid, uuid)
+                        .eq(Conversation::getUserId, userId));
     }
 }

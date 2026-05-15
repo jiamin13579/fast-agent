@@ -12,6 +12,8 @@ import lombok.Data;
 public class Conversation {
     @TableId(type = IdType.AUTO)
     private Long id;
+    @TableField("user_id")
+    private Long userId;
     private String uuid;
     private String name;
     @TableField("created_at")

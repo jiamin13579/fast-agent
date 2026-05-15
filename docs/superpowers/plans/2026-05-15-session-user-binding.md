@@ -1,3 +1,146 @@
+# 会话与用户绑定 实现计划
+
+> **面向 AI 代理的工作者：** 必需子技能：使用 superpowers:executing-plans 逐任务实现此计划。步骤使用复选框（`- [ ]`）语法来跟踪进度。
+
+**目标：** conversation 表新增 user_id 字段，创建会话自动绑定当前用户，列表/操作按用户隔离。
+
+**架构：** 后端会话层绑定——conversation 表加 user_id；Entity/Mapper/Service/Controller 四层联动，从 SecurityContext 获取当前用户 ID。
+
+**技术栈：** Spring Boot 3 + MyBatis-Plus + MySQL + Spring Security
+
+**前置条件：** 规格文档已审批通过：`docs/superpowers/specs/2026-05-15-session-user-binding-design.md`
+
+---
+
+### 任务 1：数据库 schema 变更
+
+**文件：**
+- 修改：`backend/src/main/resources/schema.sql`
+
+- [ ] **步骤 1：在 conversation 表添加 user_id 列和索引**
+
+修改 `schema.sql` 中 `conversation` 表定义，在 `id` 后增加 `user_id` 列及索引：
+
+```sql
+CREATE TABLE IF NOT EXISTS conversation (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    user_id BIGINT NOT NULL DEFAULT 1,
+    uuid VARCHAR(36) NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP(3) DEFAULT CURRENT_TIMESTAMP(3),
+    updated_at TIMESTAMP(3) DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
+    UNIQUE KEY uk_uuid (uuid),
+    INDEX idx_user_id (user_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+```
+
+> 已有表需要手动执行迁移 SQL：
+> ```sql
+> ALTER TABLE conversation
+>     ADD COLUMN user_id BIGINT NOT NULL DEFAULT 1 AFTER id,
+>     ADD INDEX idx_user_id (user_id);
+> ```
+
+- [ ] **步骤 2：验证 schema.sql 语法正确**
+
+运行：在 IDE 中确认 SQL 无语法错误，或通过 `application.yml` 确认 spring.datasource 配置可用。
+
+---
+
+### 任务 2：Conversation 实体添加 userId 字段
+
+**文件：**
+- 修改：`backend/src/main/java/com/fast/agent/entity/Conversation.java`
+
+- [ ] **步骤 1：新增 userId 字段**
+
+```java
+package com.fast.agent.entity;
+
+import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
+import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableName;
+import java.time.LocalDateTime;
+import lombok.Data;
+
+@Data
+@TableName("conversation")
+public class Conversation {
+    @TableId(type = IdType.AUTO)
+    private Long id;
+    @TableField("user_id")
+    private Long userId;
+    private String uuid;
+    private String name;
+    @TableField("created_at")
+    private LocalDateTime createdAt;
+    @TableField("updated_at")
+    private LocalDateTime updatedAt;
+}
+```
+
+- [ ] **步骤 2：编译验证**
+
+运行：`cd backend && mvn compile -q`
+预期：BUILD SUCCESS
+
+---
+
+### 任务 3：ConversationMapper 新增按用户查询方法
+
+**文件：**
+- 修改：`backend/src/main/java/com/fast/agent/repository/ConversationMapper.java`
+
+- [ ] **步骤 1：新增 findByUserId 和 findByUuidAndUserId，移除 findAll**
+
+```java
+package com.fast.agent.repository;
+
+import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
+import com.fast.agent.entity.Conversation;
+import java.util.List;
+import org.apache.ibatis.annotations.Mapper;
+
+@Mapper
+public interface ConversationMapper extends BaseMapper<Conversation> {
+
+    default Conversation findByUuid(String uuid) {
+        return selectOne(Wrappers.<Conversation>lambdaQuery().eq(Conversation::getUuid, uuid));
+    }
+
+    default List<Conversation> findByUserId(Long userId) {
+        return selectList(
+                Wrappers.<Conversation>lambdaQuery()
+                        .eq(Conversation::getUserId, userId)
+                        .orderByDesc(Conversation::getCreatedAt));
+    }
+
+    default Conversation findByUuidAndUserId(String uuid, Long userId) {
+        return selectOne(
+                Wrappers.<Conversation>lambdaQuery()
+                        .eq(Conversation::getUuid, uuid)
+                        .eq(Conversation::getUserId, userId));
+    }
+}
+```
+
+- [ ] **步骤 2：编译验证**
+
+运行：`cd backend && mvn compile -q`
+预期：BUILD SUCCESS
+
+---
+
+### 任务 4：ConversationService 接入用户绑定与所有权校验
+
+**文件：**
+- 修改：`backend/src/main/java/com/fast/agent/service/ConversationService.java`
+
+- [ ] **步骤 1：重写所有方法——创建绑定用户、列表按用户过滤、操作校验所有权**
+
+```java
 package com.fast.agent.service;
 
 import com.fast.agent.runtime.LLMAgent;
@@ -208,3 +351,21 @@ public class ConversationService {
         }
     }
 }
+```
+
+- [ ] **步骤 2：编译验证**
+
+运行：`cd backend && mvn compile -q`
+预期：BUILD SUCCESS
+
+---
+
+### 任务 5：编译验证整体
+
+**文件：**
+- 修改：无（编译验证）
+
+- [ ] **步骤 1：完整编译**
+
+运行：`cd backend && mvn compile -q`
+预期：BUILD SUCCESS
