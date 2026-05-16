@@ -18,12 +18,31 @@ CREATE TABLE `user` (
     phone VARCHAR(20),
     nickname VARCHAR(50) NOT NULL,
     password VARCHAR(255) NOT NULL,
-    is_admin BOOLEAN NOT NULL DEFAULT FALSE,
     status INT NOT NULL DEFAULT 1,
-    must_change_password BOOLEAN NOT NULL DEFAULT TRUE,
     create_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     update_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     INDEX idx_email (email)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE `admin` (
+    id               BIGINT AUTO_INCREMENT PRIMARY KEY,
+    username         VARCHAR(50) NOT NULL UNIQUE,
+    password         VARCHAR(255) NOT NULL,
+    nickname         VARCHAR(100),
+    is_global_admin  TINYINT(1) NOT NULL DEFAULT 0,
+    status           INT NOT NULL DEFAULT 1,
+    create_time      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    update_time      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_username (username)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE `admin_namespace` (
+    id           BIGINT AUTO_INCREMENT PRIMARY KEY,
+    admin_id     BIGINT NOT NULL,
+    namespace_id BIGINT NOT NULL,
+    role         VARCHAR(20) NOT NULL DEFAULT 'ADMIN' COMMENT 'ADMIN/VIEWER',
+    create_time  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY uk_admin_namespace (admin_id, namespace_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE conversation (
@@ -59,14 +78,6 @@ CREATE TABLE namespace (
     status INT NOT NULL DEFAULT 1,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
-CREATE TABLE user_namespace (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    user_id BIGINT NOT NULL,
-    namespace_id BIGINT NOT NULL,
-    role VARCHAR(20) NOT NULL COMMENT 'ADMIN/USER',
-    UNIQUE KEY uk_user_namespace (user_id, namespace_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE model_template (
@@ -136,11 +147,15 @@ CREATE TABLE usage_log (
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- 管理员账号: admin@fast.com / 123456
-INSERT INTO `user` (email, phone, nickname, password, is_admin, status, must_change_password) VALUES
-('admin@fast.com', '13800000000', 'Admin', '$2a$10$g37MXvYIb6LthhtCyU7riOi2dD.mF6vE90DoUlPWczbTB07aWJR2m', TRUE, 1, FALSE);
+INSERT INTO `admin` (username, nickname, password, is_global_admin, status) VALUES
+('admin', 'Admin', '$2a$10$g37MXvYIb6LthhtCyU7riOi2dD.mF6vE90DoUlPWczbTB07aWJR2m', 1, 1);
+
+INSERT INTO `user` (email, phone, nickname, password, status) VALUES
+('user@fast.com', '13800000001', 'User', '$2a$10$g37MXvYIb6LthhtCyU7riOi2dD.mF6vE90DoUlPWczbTB07aWJR2m', 1);
 
 INSERT INTO namespace (code, name, description) VALUES ('default', '默认空间', '系统默认空间');
+
+INSERT INTO `admin_namespace` (admin_id, namespace_id, role) VALUES (1, 1, 'ADMIN');
 
 -- Model Templates (全局模板)
 INSERT INTO model_template (name, provider, model_name, base_url, max_tokens, temperature, description) VALUES
