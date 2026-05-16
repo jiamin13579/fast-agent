@@ -39,7 +39,12 @@ export async function apiRequest<T>(
     headers["Content-Type"] = "application/json";
   }
 
-  const url = endpoint.startsWith("/") ? `${API_BASE}${endpoint}` : `${API_BASE}/${endpoint}`;
+  let url = endpoint.startsWith("/") ? `${API_BASE}${endpoint}` : `${API_BASE}/${endpoint}`;
+
+  if (namespaceId) {
+    const separator = url.includes("?") ? "&" : "?";
+    url += `${separator}namespaceId=${namespaceId}`;
+  }
 
   const res = await fetch(url, {
     ...options,

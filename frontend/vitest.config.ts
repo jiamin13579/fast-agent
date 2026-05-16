@@ -7,7 +7,7 @@ export default defineConfig({
     globals: true,
     setupFiles: ["./tests/setup.ts"],
     include: ["tests/**/*.test.{ts,tsx}"],
-    exclude: ["tests/api/**", "**/node_modules/**"],
+    exclude: ["tests/api/agent-platform.test.ts", "**/node_modules/**"],
     testTimeout: 60000,
     hookTimeout: 60000,
   },
