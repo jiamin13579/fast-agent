@@ -1,36 +1,28 @@
 "use client";
 
 import { useAuth } from "@/lib/hooks/use-auth";
-import { useNamespace } from "@/lib/hooks/use-namespace";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
 
 export function AdminGuard({ children }: { children: React.ReactNode }) {
-  const { user, loading } = useAuth();
-  const { currentNamespaceId, namespaces } = useNamespace();
+  const { admin, isGlobalAdmin, loading } = useAuth();
   const pathname = usePathname();
   const router = useRouter();
 
   useEffect(() => {
     if (loading) return;
 
-    if (!user) {
+    if (!admin) {
       router.replace("/login");
       return;
     }
 
-    if (user.isAdmin) return;
-
-    const currentNs = namespaces.find((ns) => ns.id === currentNamespaceId);
-    if (!currentNs || currentNs.role !== "ADMIN") {
-      router.replace("/");
-      return;
-    }
+    if (isGlobalAdmin) return;
 
     if (pathname.startsWith("/admin/namespaces") || pathname.startsWith("/admin/model-templates")) {
-      router.replace("/");
+      router.replace("/admin/agents");
     }
-  }, [user, loading, currentNamespaceId, namespaces, pathname, router]);
+  }, [admin, isGlobalAdmin, loading, pathname, router]);
 
   if (loading) return <div className="flex items-center justify-center h-screen">加载中...</div>;
 

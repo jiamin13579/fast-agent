@@ -1,19 +1,6 @@
 import { API_BASE } from "@/lib/config";
 import { getToken } from "@/lib/auth";
 
-const NAMESPACE_KEY = "current_namespace_id";
-
-export function getCurrentNamespaceId(): number {
-  if (typeof window === "undefined") return 0;
-  const stored = localStorage.getItem(NAMESPACE_KEY);
-  return stored ? parseInt(stored, 10) : 0;
-}
-
-export function setCurrentNamespaceId(id: number) {
-  if (typeof window === "undefined") return;
-  localStorage.setItem(NAMESPACE_KEY, String(id));
-}
-
 export interface RequestOptions extends RequestInit {
   namespaceId?: number;
 }
@@ -23,7 +10,6 @@ export async function apiRequest<T>(
   options: RequestOptions = {}
 ): Promise<T> {
   const token = getToken();
-  const namespaceId = options.namespaceId ?? getCurrentNamespaceId();
 
   const headers: Record<string, string> = {
     ...(options.headers as Record<string, string>),
@@ -33,18 +19,11 @@ export async function apiRequest<T>(
     headers["Authorization"] = `Bearer ${token}`;
   }
 
-  headers["X-Namespace-Id"] = String(namespaceId);
-
   if (options.body && typeof options.body === "string") {
     headers["Content-Type"] = "application/json";
   }
 
-  let url = endpoint.startsWith("/") ? `${API_BASE}${endpoint}` : `${API_BASE}/${endpoint}`;
-
-  if (namespaceId) {
-    const separator = url.includes("?") ? "&" : "?";
-    url += `${separator}namespaceId=${namespaceId}`;
-  }
+  const url = endpoint.startsWith("/") ? `${API_BASE}${endpoint}` : `${API_BASE}/${endpoint}`;
 
   const res = await fetch(url, {
     ...options,

@@ -11,7 +11,7 @@ import { toast } from "sonner";
 export default function LoginPage() {
   const router = useRouter();
   const { login } = useAuth();
-  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -20,7 +20,7 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      await login(email, password);
+      await login(username, password);
       toast.success("登录成功");
       router.push("/");
     } catch (err: any) {
@@ -34,21 +34,21 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-cyan-50">
       <Card className="w-[400px]">
         <CardHeader className="text-center">
-          <CardTitle>登录</CardTitle>
-          <CardDescription>输入邮箱和密码登录系统</CardDescription>
+          <CardTitle>管理后台登录</CardTitle>
+          <CardDescription>输入用户名和密码登录</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <label htmlFor="email" className="text-sm font-medium">
-                邮箱
+              <label htmlFor="username" className="text-sm font-medium">
+                用户名
               </label>
               <Input
-                id="email"
-                type="email"
-                placeholder="your@email.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                id="username"
+                type="text"
+                placeholder="admin"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
                 required
               />
             </div>

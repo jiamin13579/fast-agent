@@ -1,11 +1,8 @@
 import { API_BASE } from "@/lib/config";
-import type { User, NamespaceInfo } from "@/types/auth";
-
-export type { User, NamespaceInfo };
+import type { Admin } from "@/types/auth";
 
 const TOKEN_KEY = "auth_token";
-const USER_KEY = "auth_user";
-const NAMESPACES_KEY = "auth_namespaces";
+const ADMIN_KEY = "auth_admin";
 
 export function getToken(): string | null {
   if (typeof window === "undefined") return null;
@@ -16,30 +13,23 @@ export function setToken(token: string) {
   localStorage.setItem(TOKEN_KEY, token);
 }
 
-export function getUser(): User | null {
+export function getAdmin(): Admin | null {
   if (typeof window === "undefined") return null;
-  const stored = localStorage.getItem(USER_KEY);
+  const stored = localStorage.getItem(ADMIN_KEY);
   return stored ? JSON.parse(stored) : null;
-}
-
-export function getNamespaces(): NamespaceInfo[] {
-  if (typeof window === "undefined") return [];
-  const stored = localStorage.getItem(NAMESPACES_KEY);
-  return stored ? JSON.parse(stored) : [];
 }
 
 export function clearAuth() {
   localStorage.removeItem(TOKEN_KEY);
-  localStorage.removeItem(USER_KEY);
-  localStorage.removeItem(NAMESPACES_KEY);
+  localStorage.removeItem(ADMIN_KEY);
   document.cookie = "auth_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
 }
 
-export async function login(email: string, password: string): Promise<User> {
-  const res = await fetch(`${API_BASE}/auth/login`, {
+export async function login(username: string, password: string): Promise<Admin> {
+  const res = await fetch(`${API_BASE}/admin/auth/login`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email, password }),
+    body: JSON.stringify({ username, password }),
   });
 
   if (!res.ok) {
@@ -49,17 +39,14 @@ export async function login(email: string, password: string): Promise<User> {
 
   const data = await res.json();
   setToken(data.token);
-  setUser(data.user);
-  if (data.namespaces) {
-    localStorage.setItem(NAMESPACES_KEY, JSON.stringify(data.namespaces));
-  }
+  localStorage.setItem(ADMIN_KEY, JSON.stringify(data.admin));
   document.cookie = `auth_token=${data.token}; path=/`;
-  return data.user;
+  return data.admin;
 }
 
-export async function getCurrentUser(): Promise<{ user: User; namespaces: NamespaceInfo[] }> {
+export async function getCurrentAdmin(): Promise<Admin> {
   const token = getToken();
-  const res = await fetch(`${API_BASE}/auth/me`, {
+  const res = await fetch(`${API_BASE}/admin/auth/me`, {
     headers: { Authorization: `Bearer ${token}` },
   });
 
@@ -69,17 +56,11 @@ export async function getCurrentUser(): Promise<{ user: User; namespaces: Namesp
   }
 
   const data = await res.json();
-  setUser(data.user);
-  if (data.namespaces) {
-    localStorage.setItem(NAMESPACES_KEY, JSON.stringify(data.namespaces));
-  }
+  // /me returns flat {id, username, nickname, isGlobalAdmin}
+  localStorage.setItem(ADMIN_KEY, JSON.stringify(data));
   return data;
 }
 
-export function setUser(user: User) {
-  localStorage.setItem(USER_KEY, JSON.stringify(user));
-}
-
-export function setNamespaces(namespaces: NamespaceInfo[]) {
-  localStorage.setItem(NAMESPACES_KEY, JSON.stringify(namespaces));
+export function setAdmin(admin: Admin) {
+  localStorage.setItem(ADMIN_KEY, JSON.stringify(admin));
 }

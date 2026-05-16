@@ -3,33 +3,30 @@
 import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import * as authApi from "@/lib/api/auth";
-import { getToken, setToken, clearAuth, getUser, setUser, getNamespaces, setNamespaces } from "@/lib/auth";
-import type { User as AuthUser, NamespaceInfo } from "@/types/auth";
+import { getToken, setToken, clearAuth, getAdmin, setAdmin } from "@/lib/auth";
+import type { Admin } from "@/types/auth";
 
-interface AuthContextType {
-  user: AuthUser | null;
-  isAdmin: boolean;
-  namespaces: NamespaceInfo[];
+interface AdminAuthContextType {
+  admin: Admin | null;
+  isGlobalAdmin: boolean;
   loading: boolean;
-  login: (email: string, password: string) => Promise<void>;
+  login: (username: string, password: string) => Promise<void>;
   logout: () => void;
 }
 
-const AuthContext = createContext<AuthContextType>({
-  user: null,
-  isAdmin: false,
-  namespaces: [],
+const AdminAuthContext = createContext<AdminAuthContextType>({
+  admin: null,
+  isGlobalAdmin: false,
   loading: true,
   login: async () => {},
   logout: () => {},
 });
 
-export const useAuth = () => useContext(AuthContext);
+export const useAuth = () => useContext(AdminAuthContext);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
-  const [user, setUserState] = useState<AuthUser | null>(null);
-  const [namespaces, setNamespacesState] = useState<NamespaceInfo[]>([]);
+  const [admin, setAdminState] = useState<Admin | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -39,20 +36,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    const cachedUser = getUser();
-    const cachedNamespaces = getNamespaces();
-    if (cachedUser) {
-      setUserState(cachedUser);
-      setNamespacesState(cachedNamespaces);
+    const cachedAdmin = getAdmin();
+    if (cachedAdmin) {
+      setAdminState(cachedAdmin);
       setLoading(false);
     }
 
     authApi.getMe()
       .then((data) => {
-        setUserState(data.user);
-        setUser(data.user);
-        setNamespacesState(data.namespaces);
-        setNamespaces(data.namespaces);
+        setAdminState(data);
+        setAdmin(data);
       })
       .catch(() => {
         clearAuth();
@@ -61,14 +54,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .finally(() => setLoading(false));
   }, [router]);
 
-  const login = useCallback(async (email: string, password: string) => {
-    const data = await authApi.login(email, password);
+  const login = useCallback(async (username: string, password: string) => {
+    const data = await authApi.login(username, password);
     setToken(data.token);
-    setUser(data.user);
-    setNamespaces(data.namespaces);
+    setAdmin(data.admin);
     document.cookie = `auth_token=${data.token}; path=/`;
-    setUserState(data.user);
-    setNamespacesState(data.namespaces);
+    setAdminState(data.admin);
   }, []);
 
   const logout = useCallback(() => {
@@ -77,17 +68,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [router]);
 
   return (
-    <AuthContext.Provider
+    <AdminAuthContext.Provider
       value={{
-        user,
-        isAdmin: user?.isAdmin ?? false,
-        namespaces,
+        admin,
+        isGlobalAdmin: admin?.isGlobalAdmin ?? false,
         loading,
         login,
         logout,
       }}
     >
       {children}
-    </AuthContext.Provider>
+    </AdminAuthContext.Provider>
   );
 }

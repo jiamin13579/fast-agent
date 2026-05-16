@@ -1,24 +1,24 @@
-export interface User {
+export interface Admin {
   id: number;
-  email: string;
+  username: string;
   nickname: string;
-  isAdmin: boolean;
-  mustChangePassword: boolean;
+  isGlobalAdmin: boolean;
 }
 
 export interface NamespaceInfo {
   id: number;
-  name: string;
-  role: "ADMIN" | "USER";
+  role: "ADMIN" | "VIEWER";
 }
 
 export interface LoginResponse {
   token: string;
-  user: User;
+  admin: Admin;
   namespaces: NamespaceInfo[];
 }
 
 export interface AuthMeResponse {
-  user: User;
-  namespaces: NamespaceInfo[];
+  id: number;
+  username: string;
+  nickname: string;
+  isGlobalAdmin: boolean;
 }

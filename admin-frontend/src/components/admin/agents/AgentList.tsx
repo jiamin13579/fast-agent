@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/hooks/use-auth";
-import { useNamespace } from "@/lib/hooks/use-namespace";
 import * as agentsApi from "@/lib/api/admin-agents";
 import * as namespacesApi from "@/lib/api/admin-namespaces";
 import { Button } from "@/components/ui/button";
@@ -15,19 +14,18 @@ import { ResourceBindingDialog } from "./ResourceBindingDialog";
 import type { Agent, Namespace } from "@/types/admin";
 
 export function AgentList() {
-  const { isAdmin } = useAuth();
-  const { currentNamespaceId, isCurrentNsAdmin } = useNamespace();
+  const { isGlobalAdmin } = useAuth();
   const [agents, setAgents] = useState<Agent[]>([]);
   const [namespaces, setNamespaces] = useState<Namespace[]>([]);
   const [loading, setLoading] = useState(true);
   const [formOpen, setFormOpen] = useState(false);
   const [editingAgent, setEditingAgent] = useState<Agent | null>(null);
   const [bindingAgent, setBindingAgent] = useState<Agent | null>(null);
-  const [filterNamespace, setFilterNamespace] = useState<string>(isCurrentNsAdmin ? String(currentNamespaceId) : "all");
+  const [filterNamespace, setFilterNamespace] = useState<string>("all");
 
   const fetchAgents = async (nsFilter?: string) => {
     try {
-      const nsId = isCurrentNsAdmin ? currentNamespaceId : (nsFilter && nsFilter !== "all" ? Number(nsFilter) : undefined);
+      const nsId = nsFilter && nsFilter !== "all" ? Number(nsFilter) : undefined;
       const data = await agentsApi.listAgents(nsId);
       setAgents(data);
     } catch (e: any) {
@@ -38,7 +36,7 @@ export function AgentList() {
   };
 
   const fetchNamespaces = async () => {
-    if (!isAdmin) return;
+    if (!isGlobalAdmin) return;
     try {
       const data = await namespacesApi.listNamespaces();
       setNamespaces(data);
@@ -48,8 +46,9 @@ export function AgentList() {
   };
 
   useEffect(() => {
-    Promise.all([fetchAgents(), fetchNamespaces()]);
-  }, [currentNamespaceId]);
+    fetchAgents();
+    fetchNamespaces();
+  }, []);
 
   const handleDelete = async (id: number) => {
     if (!confirm("确定要删除吗？")) return;
@@ -73,7 +72,7 @@ export function AgentList() {
       <div className="flex justify-between items-center">
         <h1 className="text-xl font-semibold">Agent 管理</h1>
         <div className="flex gap-4">
-          {isAdmin && !isCurrentNsAdmin && (
+          {isGlobalAdmin && (
             <Select value={filterNamespace} onValueChange={(v) => { if (!v) return; setFilterNamespace(v); fetchAgents(v); }}>
               <SelectTrigger className="w-48">
                 <SelectValue placeholder="筛选 Namespace" />
