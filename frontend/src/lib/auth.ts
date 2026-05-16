@@ -1,21 +1,11 @@
 import { API_BASE } from "@/lib/config";
+import type { User, NamespaceInfo } from "@/types/auth";
+
+export type { User, NamespaceInfo };
 
 const TOKEN_KEY = "auth_token";
 const USER_KEY = "auth_user";
 const NAMESPACES_KEY = "auth_namespaces";
-
-export interface User {
-  id: number;
-  email: string;
-  nickname: string;
-  isAdmin: boolean;
-}
-
-export interface NamespaceInfo {
-  id: number;
-  name?: string;
-  role: string;
-}
 
 export function getToken(): string | null {
   if (typeof window === "undefined") return null;
@@ -86,6 +76,10 @@ export async function getCurrentUser(): Promise<{ user: User; namespaces: Namesp
   return data;
 }
 
-function setUser(user: User) {
+export function setUser(user: User) {
   localStorage.setItem(USER_KEY, JSON.stringify(user));
+}
+
+export function setNamespaces(namespaces: NamespaceInfo[]) {
+  localStorage.setItem(NAMESPACES_KEY, JSON.stringify(namespaces));
 }

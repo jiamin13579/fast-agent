@@ -50,7 +50,7 @@ describe("useNamespace", () => {
   });
 
   it("should set isCurrentNsAdmin to false when switching to non-admin namespace", async () => {
-    localStorage.setItem("auth_token", "user-token");
+    localStorage.setItem("auth_token", "multi-ns-token");
     localStorage.setItem("auth_namespaces", JSON.stringify([
       { id: 1, name: "空间1", role: "ADMIN" },
       { id: 2, name: "空间2", role: "USER" },

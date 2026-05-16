@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 interface Props {
-  role: "user" | "assistant";
+  role: "user" | "assistant" | "system";
   content: string;
   createdAt?: string;
 }
@@ -17,7 +17,7 @@ export function MessageBubble({ role, content, createdAt }: Props) {
         role === "user" ? "bg-gradient-to-br from-blue-500 to-cyan-500" : "bg-gradient-to-br from-blue-400 to-cyan-400"
       )}>
         <AvatarFallback className="text-white font-semibold text-sm">
-          {role === "user" ? "我" : "AI"}
+          {role === "user" ? "我" : role === "system" ? "系统" : "AI"}
         </AvatarFallback>
       </Avatar>
 

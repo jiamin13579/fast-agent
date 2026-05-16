@@ -1,5 +1,5 @@
 import { api } from "./client";
-import type { Agent, AgentResource } from "@/types/admin";
+import type { Agent } from "@/types/admin";
 
 export async function listAgents(namespaceId?: number): Promise<Agent[]> {
   const query = namespaceId !== undefined ? `?namespaceId=${namespaceId}` : "";

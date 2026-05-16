@@ -33,7 +33,7 @@ export function ModelTemplateList() {
 
   const fetchTemplates = async () => {
     try {
-      const data = await api.get<ModelTemplate[]>('/api/admin/model-templates');
+      const data = await api.get<ModelTemplate[]>('/admin/model-templates');
       setTemplates(data);
     } catch {
       toast.error("获取模型模板列表失败");

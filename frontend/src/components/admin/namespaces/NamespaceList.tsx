@@ -31,7 +31,7 @@ export function NamespaceList() {
 
   const fetchNamespaces = async () => {
     try {
-      const data = await api.get<Namespace[]>('/api/admin/namespaces');
+      const data = await api.get<Namespace[]>('/admin/namespaces');
       setNamespaces(data);
     } catch {
       toast.error("获取 Namespace 列表失败");

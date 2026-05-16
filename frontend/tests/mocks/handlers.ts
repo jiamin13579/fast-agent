@@ -25,6 +25,15 @@ export const handlers = [
         namespaces: mockNamespaceAdminNs,
       });
     }
+    if (authHeader === "Bearer multi-ns-token") {
+      return HttpResponse.json({
+        user: { ...mockUser, id: 2, email: "nsadmin@fast.com", nickname: "NSAdmin", isAdmin: false },
+        namespaces: [
+          { id: 1, name: "空间1", role: "ADMIN" },
+          { id: 2, name: "空间2", role: "USER" },
+        ],
+      });
+    }
     return HttpResponse.json({
       user: { ...mockUser, id: 3, email: "user@fast.com", nickname: "User", isAdmin: false },
       namespaces: mockEndUserNs,

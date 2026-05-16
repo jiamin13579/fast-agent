@@ -38,7 +38,6 @@ export function ConversationView({ conversationUuid }: Props) {
   }, [conversationUuid, select]);
 
   useEffect(() => {
-    if (!currentNamespaceId) return;
     agentsApi.listAgents(currentNamespaceId).then(setAgents).catch(console.error);
   }, [currentNamespaceId]);
 
@@ -46,7 +45,7 @@ export function ConversationView({ conversationUuid }: Props) {
     if (!selectedAgentId) { setAvailableModels([]); return; }
     agentsApi.getAgentResources(selectedAgentId, "MODEL")
       .then((resources) => {
-        const modelIds = resources.map((r) => r.resource_id);
+        const modelIds = resources.map((r) => r.resourceId);
         setAvailableModels(modelIds.map((id) => ({ id, name: `模型 ${id}` })));
       })
       .catch(console.error);
