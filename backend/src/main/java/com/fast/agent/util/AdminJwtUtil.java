@@ -9,29 +9,25 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 @Component
-public class JwtUtil {
+public class AdminJwtUtil {
 
-    // JWT secret must be configured via environment variable or in application.yml
-    // (agent.jwt.secret)
-    @Value("${agent.jwt.secret}")
+    @Value("${agent.jwt.admin-secret}")
     private String secret;
 
-    @Value("${agent.jwt.expiration:604800000}") // 7 days in ms
+    @Value("${agent.jwt.admin-expiration:7200000}")
     private long expiration;
 
     private SecretKey getSigningKey() {
-        byte[] keyBytes = secret.getBytes(StandardCharsets.UTF_8);
-        return Keys.hmacShaKeyFor(keyBytes);
+        return Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
     }
 
-    public String generateToken(Long userId, String email, Boolean isAdmin) {
+    public String generateToken(Long adminId, String username, Boolean isGlobalAdmin) {
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + expiration);
-
         return Jwts.builder()
-                .setSubject(String.valueOf(userId))
-                .claim("email", email)
-                .claim("isAdmin", isAdmin)
+                .setSubject(String.valueOf(adminId))
+                .claim("username", username)
+                .claim("isGlobalAdmin", isGlobalAdmin)
                 .setIssuedAt(now)
                 .setExpiration(expiryDate)
                 .signWith(getSigningKey(), SignatureAlgorithm.HS256)
