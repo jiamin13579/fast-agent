@@ -2,7 +2,11 @@ import { defineConfig } from "vitest/config";
 import path from "path";
 
 export default defineConfig({
+  oxc: {
+    jsx: { runtime: "automatic" },
+  },
   test: {
+    pool: "threads",
     environment: "jsdom",
     globals: true,
     setupFiles: ["./tests/setup.ts"],
