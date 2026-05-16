@@ -12,6 +12,12 @@ spring:
     username: dbadmin
     password: Db@Adm123
     driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      max-lifetime: 300000
+      idle-timeout: 60000
+      connection-timeout: 10000
+      validation-timeout: 5000
+      keepalive-time: 60000
 
 mybatis-plus:
   configuration:

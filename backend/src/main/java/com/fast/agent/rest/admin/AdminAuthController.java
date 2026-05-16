@@ -25,7 +25,7 @@ public class AdminAuthController {
             return ResponseEntity.ok(adminAuthService.login(username, password));
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(Map.of("message", e.getMessage()));
+                    .body(Map.of("message", e.getMessage() != null ? e.getMessage() : "登录失败"));
         }
     }
 
@@ -41,7 +41,7 @@ public class AdminAuthController {
             return ResponseEntity.ok(result);
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(Map.of("message", e.getMessage()));
+                    .body(Map.of("message", e.getMessage() != null ? e.getMessage() : "未登录"));
         }
     }
 }

@@ -31,8 +31,11 @@ Thumbs.db
 .env.local
 *.local
 
-# Claude
-.claude/
+# Claude (except skills/)
+.claude/*
+!.claude/skills/
+!.claude/skills/**
+.claude/settings.local.json
 .agents/
 .codex/
 **/.agents/

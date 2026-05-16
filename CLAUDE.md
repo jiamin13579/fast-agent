@@ -21,6 +21,7 @@
 | 代码审查 | `superpowers:requesting-code-review` |
 | 接收反馈 | `superpowers:receiving-code-review` |
 | 验证完成 | `superpowers:verification-before-completion` |
+| 浏览器监控测试 | `test-env-monitoring` |
 
 ---
 
@@ -168,54 +169,33 @@
 
 ## 浏览器自动化测试
 
-使用 `playwright-cli` 进行浏览器自动化测试。
+使用 `test-env-monitoring` skill 进行多浏览器错误监控测试。
 
-### 常用命令
-
+### 一键启动
 ```bash
-# 打开浏览器
-playwright-cli open http://localhost:3000
-
-# 页面快照（查看当前状态和元素引用）
-playwright-cli snapshot
-
-# 点击元素
-playwright-cli click e15
-
-# 输入文本
-playwright-cli fill e10 "text"
-
-# 检查控制台日志
-playwright-cli console
-
-# 重新加载页面
-playwright-cli reload
-
-# 关闭浏览器
-playwright-cli close
+bash .claude/skills/fast-agent-test-env-monitoring/scripts/test-env.sh
 ```
+自动启动 backend(8080) + user-frontend(3000) + admin-frontend(3001) + 2 个 Playwright 浏览器（user-browser / admin-browser）。
 
 ### 测试流程
+1. 启动环境（上面命令）
+2. 用户手动操作浏览器窗口
+3. 运行 `playwright-cli -s=<session> console error` 收集错误
+4. 逐一修复
 
-1. 启动后端服务：`mvn spring-boot:run`（端口 8080/8081）
-2. 启动前端服务：`npm run dev`（端口 3000）
-3. 使用 playwright-cli 连接浏览器进行交互测试
-4. 检查 console 日志确认 SocketIO 连接状态
-
-### 测试检查点
-
-- [ ] SocketIO 连接成功（无 WebSocket 错误）
-- [ ] 用户登录功能正常
-- [ ] 消息发送/接收正常
-- [ ] Room 隔离正常（不同会话不互相干扰）
-
----
-
-## 测试账号
-
+### 测试账号
 | 账号 | 密码 | 说明 |
 |------|------|------|
-| admin@fast.com | 123456 | 管理员账号 |
+| admin@fast.com | 123456 | 用户端登录 |
+| admin | 123456 | 管理后台登录 |
+
+### 测试检查点
+- [ ] SocketIO 连接成功（无 WebSocket 错误）
+- [ ] 用户登录功能正常
+- [ ] 管理端登录功能正常
+- [ ] 消息发送/接收正常
+- [ ] Room 隔离正常（不同会话不互相干扰）
+- [ ] 两个 Playwright 浏览器无 console errors
 
 ---
 
