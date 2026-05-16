@@ -36,7 +36,6 @@ public class UserService {
 
         String newPassword = generateRandomPassword(8);
         user.setPassword(passwordEncoder.encode(newPassword));
-        user.setMustChangePassword(true);
         userRepository.update(user);
 
         return newPassword;

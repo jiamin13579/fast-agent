@@ -87,7 +87,10 @@
       "Bash(xargs -I{} grep -l \"\\\\.\" {})",
       "Bash(mvn test *)",
       "Bash(xargs perl *)",
-      "Bash(grep *)"
+      "Bash(grep *)",
+      "Bash(bash *)",
+      "Bash(playwright-cli *)",
+      "Bash(lsof -ti:8080 -ti:3000 -ti:3001)"
     ]
   }
 }

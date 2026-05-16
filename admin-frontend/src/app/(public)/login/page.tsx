@@ -22,7 +22,7 @@ export default function LoginPage() {
     try {
       await login(username, password);
       toast.success("登录成功");
-      router.push("/");
+      router.push("/admin/agents");
     } catch (err: any) {
       toast.error(err.message || "登录失败");
     } finally {

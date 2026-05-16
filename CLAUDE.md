@@ -186,7 +186,7 @@ bash .claude/skills/fast-agent-test-env-monitoring/scripts/test-env.sh
 ### 测试账号
 | 账号 | 密码 | 说明 |
 |------|------|------|
-| admin@fast.com | 123456 | 用户端登录 |
+| user@fast.com | 123456 | 用户端登录 |
 | admin | 123456 | 管理后台登录 |
 
 ### 测试检查点

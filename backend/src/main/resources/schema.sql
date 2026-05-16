@@ -7,6 +7,7 @@ DROP TABLE IF EXISTS llm_model;
 DROP TABLE IF EXISTS agent;
 DROP TABLE IF EXISTS model_template;
 DROP TABLE IF EXISTS admin_namespace;
+DROP TABLE IF EXISTS admin;
 DROP TABLE IF EXISTS namespace;
 DROP TABLE IF EXISTS chat_message;
 DROP TABLE IF EXISTS conversation;

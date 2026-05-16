@@ -18,14 +18,22 @@ export function setToken(token: string) {
 
 export function getUser(): User | null {
   if (typeof window === "undefined") return null;
-  const stored = localStorage.getItem(USER_KEY);
-  return stored ? JSON.parse(stored) : null;
+  try {
+    const stored = localStorage.getItem(USER_KEY);
+    return stored ? JSON.parse(stored) : null;
+  } catch {
+    return null;
+  }
 }
 
 export function getNamespaces(): NamespaceInfo[] {
   if (typeof window === "undefined") return [];
-  const stored = localStorage.getItem(NAMESPACES_KEY);
-  return stored ? JSON.parse(stored) : [];
+  try {
+    const stored = localStorage.getItem(NAMESPACES_KEY);
+    return stored ? JSON.parse(stored) : [];
+  } catch {
+    return [];
+  }
 }
 
 export function clearAuth() {
@@ -81,5 +89,9 @@ export function setUser(user: User) {
 }
 
 export function setNamespaces(namespaces: NamespaceInfo[]) {
+  if (!namespaces) {
+    localStorage.removeItem(NAMESPACES_KEY);
+    return;
+  }
   localStorage.setItem(NAMESPACES_KEY, JSON.stringify(namespaces));
 }

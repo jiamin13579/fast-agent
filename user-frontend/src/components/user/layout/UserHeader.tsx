@@ -23,7 +23,7 @@ export function UserHeader() {
 
   return (
     <div className="flex items-center gap-3">
-      {namespaces.length > 0 && (
+      {namespaces && namespaces.length > 0 && (
         <NamespaceSwitcher
           namespaces={namespaces}
           current={currentNamespaceId}

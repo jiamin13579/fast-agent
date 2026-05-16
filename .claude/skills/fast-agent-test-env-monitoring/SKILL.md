@@ -115,7 +115,7 @@ lsof -ti:8080 -ti:3000 -ti:3001 | xargs kill -9
 ## Test Accounts
 | Account | Password | Frontend |
 |---------|----------|----------|
-| admin@fast.com | 123456 | User login |
+| user@fast.com | 123456 | User login |
 | admin | 123456 | Admin login |
 
 ## Common Issues
