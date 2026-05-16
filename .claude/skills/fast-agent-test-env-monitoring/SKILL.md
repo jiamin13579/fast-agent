@@ -58,13 +58,7 @@ cp .claude/skills/fast-agent-test-env-monitoring/templates/bug-report.md \
 
 Populate each error into the report.
 
-Step C — Create fix branch named after the bug report:
-```bash
-git checkout -b fix/<bug-report-filename-without-ext>
-```
-Example: bug report `docs/test-bugs/2026-05-16-153000.md` → branch `fix/2026-05-16-153000`
-
-Step D — Fix one bug at a time, without asking for permission:
+Step C — Fix one bug at a time, without asking for permission:
 
 1. **Analyze** — trace call chain to find root cause
 2. **Fix** — minimal, targeted change
@@ -75,9 +69,9 @@ Step D — Fix one bug at a time, without asking for permission:
 
 Do NOT ask "can I fix this?" — just fix. Do NOT fix multiple bugs before verifying each one.
 
-Step E — Final verification:
+Step D — Final verification:
 - [ ] All bugs verified/closed in report
-- [ ] Each bug has its own commit on `fix/<report-name>` branch
+- [ ] Each bug committed with message `fix: BUG-N <description>`
 - [ ] Both browsers show zero console errors
 - [ ] Backend log has no new exceptions
 
