@@ -14,7 +14,7 @@ public class UserService {
 
     @Autowired private PasswordEncoder passwordEncoder;
 
-    public User create(String email, String phone, String nickname, String password, Boolean isAdmin) {
+    public User create(String email, String phone, String nickname, String password) {
         if (userRepository.findByEmail(email).isPresent()) {
             throw new RuntimeException("邮箱已被使用");
         }
@@ -23,9 +23,7 @@ public class UserService {
         user.setPhone(phone);
         user.setNickname(nickname);
         user.setPassword(passwordEncoder.encode(password));
-        user.setIsAdmin(isAdmin != null ? isAdmin : false);
         user.setStatus(1);
-        user.setMustChangePassword(false);
         userRepository.insert(user);
         return user;
     }

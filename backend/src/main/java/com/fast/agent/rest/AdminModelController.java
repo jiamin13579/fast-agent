@@ -1,10 +1,9 @@
 package com.fast.agent.rest;
 
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.fast.agent.config.NamespaceContext;
+import com.fast.agent.config.AdminContext;
+import com.fast.agent.entity.AdminNamespace;
 import com.fast.agent.entity.LlmModel;
-import com.fast.agent.entity.UserNamespace;
-import com.fast.agent.repository.UserNamespaceMapper;
+import com.fast.agent.repository.AdminNamespaceMapper;
 import com.fast.agent.service.LlmModelService;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,7 +18,7 @@ public class AdminModelController {
     @Autowired
     private LlmModelService llmModelService;
     @Autowired
-    private UserNamespaceMapper userNamespaceMapper;
+    private AdminNamespaceMapper adminNamespaceMapper;
 
     @GetMapping
     public List<LlmModel> list(@RequestParam(defaultValue = "0") Long namespaceId) {
@@ -59,14 +58,10 @@ public class AdminModelController {
     }
 
     private void checkPermission(Long namespaceId) {
-        if (NamespaceContext.getIsAdmin()) return;
+        if (AdminContext.isGlobalAdmin()) return;
         if (namespaceId == 0L) throw new ResponseStatusException(HttpStatus.FORBIDDEN);
-        Long userId = NamespaceContext.getUserId();
-        LambdaQueryWrapper<UserNamespace> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(UserNamespace::getUserId, userId)
-               .eq(UserNamespace::getNamespaceId, namespaceId)
-               .eq(UserNamespace::getRole, "ADMIN");
-        if (userNamespaceMapper.selectCount(wrapper) == 0) {
+        Long adminId = AdminContext.getAdminId();
+        if (adminNamespaceMapper.countAdminRole(adminId, namespaceId) == 0) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN);
         }
     }

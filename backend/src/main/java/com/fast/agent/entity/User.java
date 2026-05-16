@@ -14,11 +14,7 @@ public class User {
     private String phone;
     private String nickname;
     private String password;
-    @TableField("is_admin")
-    private Boolean isAdmin;
     private Integer status;
-    @TableField("must_change_password")
-    private Boolean mustChangePassword;
     @TableField("create_time")
     private LocalDateTime createTime;
     @TableField("update_time")
@@ -64,28 +60,12 @@ public class User {
         this.password = password;
     }
 
-    public Boolean getIsAdmin() {
-        return isAdmin;
-    }
-
-    public void setIsAdmin(Boolean isAdmin) {
-        this.isAdmin = isAdmin;
-    }
-
     public Integer getStatus() {
         return status;
     }
 
     public void setStatus(Integer status) {
         this.status = status;
-    }
-
-    public Boolean getMustChangePassword() {
-        return mustChangePassword;
-    }
-
-    public void setMustChangePassword(Boolean mustChangePassword) {
-        this.mustChangePassword = mustChangePassword;
     }
 
     public LocalDateTime getCreateTime() {

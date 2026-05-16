@@ -1,6 +1,6 @@
 package com.fast.agent.rest;
 
-import com.fast.agent.config.NamespaceContext;
+import com.fast.agent.config.AdminContext;
 import com.fast.agent.entity.ModelTemplate;
 import com.fast.agent.service.ModelTemplateService;
 import java.util.List;
@@ -18,32 +18,32 @@ public class AdminModelTemplateController {
 
     @GetMapping
     public List<ModelTemplate> list() {
-        if (!NamespaceContext.getIsAdmin()) throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+        if (!AdminContext.isGlobalAdmin()) throw new ResponseStatusException(HttpStatus.FORBIDDEN);
         return modelTemplateService.list();
     }
 
     @GetMapping("/{id}")
     public ModelTemplate get(@PathVariable Long id) {
-        if (!NamespaceContext.getIsAdmin()) throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+        if (!AdminContext.isGlobalAdmin()) throw new ResponseStatusException(HttpStatus.FORBIDDEN);
         return modelTemplateService.getById(id);
     }
 
     @PostMapping
     public void create(@RequestBody ModelTemplate template) {
-        if (!NamespaceContext.getIsAdmin()) throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+        if (!AdminContext.isGlobalAdmin()) throw new ResponseStatusException(HttpStatus.FORBIDDEN);
         modelTemplateService.create(template);
     }
 
     @PutMapping("/{id}")
     public void update(@PathVariable Long id, @RequestBody ModelTemplate template) {
-        if (!NamespaceContext.getIsAdmin()) throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+        if (!AdminContext.isGlobalAdmin()) throw new ResponseStatusException(HttpStatus.FORBIDDEN);
         template.setId(id);
         modelTemplateService.update(template);
     }
 
     @DeleteMapping("/{id}")
     public void delete(@PathVariable Long id) {
-        if (!NamespaceContext.getIsAdmin()) throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+        if (!AdminContext.isGlobalAdmin()) throw new ResponseStatusException(HttpStatus.FORBIDDEN);
         modelTemplateService.delete(id);
     }
 }
