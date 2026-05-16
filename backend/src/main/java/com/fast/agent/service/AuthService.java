@@ -1,7 +1,9 @@
 package com.fast.agent.service;
 
+import com.fast.agent.entity.Namespace;
 import com.fast.agent.entity.User;
 import com.fast.agent.entity.UserNamespace;
+import com.fast.agent.repository.NamespaceMapper;
 import com.fast.agent.repository.UserMapper;
 import com.fast.agent.repository.UserNamespaceMapper;
 import com.fast.agent.util.JwtUtil;
@@ -18,6 +20,7 @@ public class AuthService {
 
     @Autowired private UserMapper userRepository;
     @Autowired private UserNamespaceMapper userNamespaceMapper;
+    @Autowired private NamespaceMapper namespaceMapper;
     @Autowired private PasswordEncoder passwordEncoder;
     @Autowired private JwtUtil jwtUtil;
 
@@ -83,6 +86,8 @@ public class AuthService {
                     Map<String, Object> map = new HashMap<>();
                     map.put("id", un.getNamespaceId());
                     map.put("role", un.getRole());
+                    Namespace ns = namespaceMapper.selectById(un.getNamespaceId());
+                    map.put("name", ns != null ? ns.getName() : "");
                     return map;
                 })
                 .collect(Collectors.toList());
