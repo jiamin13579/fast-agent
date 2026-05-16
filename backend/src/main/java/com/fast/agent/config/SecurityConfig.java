@@ -22,7 +22,8 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 @EnableWebSecurity
 public class SecurityConfig {
 
-    @Autowired private JwtAuthenticationFilter jwtAuthenticationFilter;
+    @Autowired private UserAuthFilter userAuthFilter;
+    @Autowired private AdminAuthFilter adminAuthFilter;
 
     @Value("${agent.cors.allowed-origin-patterns:}")
     private String allowedOriginPatterns;
@@ -60,24 +61,22 @@ public class SecurityConfig {
                         auth ->
                                 auth.requestMatchers(HttpMethod.OPTIONS, "/**")
                                         .permitAll()
-                                        .requestMatchers("/api/auth/login")
+                                        .requestMatchers("/api/user/auth/login")
+                                        .permitAll()
+                                        .requestMatchers("/api/admin/auth/login")
                                         .permitAll()
                                         .requestMatchers("/socket.io/**")
                                         .permitAll()
                                         .requestMatchers("/error")
                                         .permitAll()
-                                        .requestMatchers("/api/admin/namespaces/**")
-                                        .hasRole("ADMIN")
-                                        .requestMatchers("/api/admin/model-templates/**")
-                                        .hasRole("ADMIN")
-                                        .requestMatchers("/api/admin/**")
+                                        .requestMatchers("/api/user/**")
                                         .authenticated()
-                                        .requestMatchers("/api/agents/**")
+                                        .requestMatchers("/api/admin/**")
                                         .authenticated()
                                         .anyRequest()
                                         .authenticated())
-                .addFilterBefore(
-                        jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+                .addFilterBefore(userAuthFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(adminAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }

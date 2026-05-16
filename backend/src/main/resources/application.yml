@@ -21,8 +21,10 @@ agent:
   cors:
     allowed-origin-patterns: ${CORS_ALLOWED_ORIGIN_PATTERNS:}
   jwt:
-    secret: ${JWT_SECRET:my-super-secret-jwt-key-that-should-be-at-least-256-bits-long-for-hs256}
-    expiration: 604800000
+    user-secret: ${JWT_USER_SECRET:user-secret-key-at-least-256-bits-long-for-hs256}
+    user-expiration: 604800000
+    admin-secret: ${JWT_ADMIN_SECRET:admin-secret-key-at-least-256-bits-long-for-hs256}
+    admin-expiration: 7200000
   llm:
     provider: mock
     api-key: ${LLM_API_KEY:your-api-key}
