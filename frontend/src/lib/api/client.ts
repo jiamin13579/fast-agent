@@ -1,19 +1,12 @@
 import { API_BASE } from "@/lib/config";
-import { getToken, getNamespaces } from "@/lib/auth";
+import { getToken } from "@/lib/auth";
 
 const NAMESPACE_KEY = "current_namespace_id";
 
 export function getCurrentNamespaceId(): number {
   if (typeof window === "undefined") return 0;
   const stored = localStorage.getItem(NAMESPACE_KEY);
-  if (stored) return parseInt(stored, 10);
-
-  // Fallback to first namespace
-  const namespaces = getNamespaces();
-  if (namespaces.length > 0) {
-    return namespaces[0].id;
-  }
-  return 0;
+  return stored ? parseInt(stored, 10) : 0;
 }
 
 export function setCurrentNamespaceId(id: number) {
@@ -40,10 +33,9 @@ export async function apiRequest<T>(
     headers["Authorization"] = `Bearer ${token}`;
   }
 
-  // Always include X-Namespace-Id header
   headers["X-Namespace-Id"] = String(namespaceId);
 
-  if (options.body && typeof options.body === "object") {
+  if (options.body && typeof options.body === "string") {
     headers["Content-Type"] = "application/json";
   }
 
@@ -59,13 +51,11 @@ export async function apiRequest<T>(
     throw new Error(error.message || `HTTP ${res.status}`);
   }
 
-  // Handle 204 No Content
   if (res.status === 204) return {} as T;
 
   return res.json();
 }
 
-// Convenience methods
 export const api = {
   get: <T>(endpoint: string, options?: RequestOptions) =>
     apiRequest<T>(endpoint, { ...options, method: "GET" }),
