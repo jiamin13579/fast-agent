@@ -39,4 +39,7 @@ export const handlers = [
   http.get("*/api/agents/:id/resources", () => HttpResponse.json([
     { id: 1, agentId: 1, resourceType: "MODEL", resourceId: 1 },
   ])),
+
+  http.get("*/api/admin/models", () => HttpResponse.json([])),
+  http.get("*/api/admin/namespaces", () => HttpResponse.json([])),
 ];
