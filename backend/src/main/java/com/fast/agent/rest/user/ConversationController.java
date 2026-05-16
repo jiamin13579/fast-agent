@@ -1,4 +1,4 @@
-package com.fast.agent.rest;
+package com.fast.agent.rest.user;
 
 import com.fast.agent.entity.Conversation;
 import com.fast.agent.entity.ChatMessage;
@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
 @RestController
-@RequestMapping("/api/conversations")
+@RequestMapping("/api/user/conversations")
 public class ConversationController {
 
     @Autowired private ConversationService conversationService;

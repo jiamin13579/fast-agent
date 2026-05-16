@@ -1,4 +1,4 @@
-package com.fast.agent.rest;
+package com.fast.agent.rest.user;
 
 import com.fast.agent.entity.Agent;
 import com.fast.agent.entity.AgentResource;
@@ -9,7 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/agents")
+@RequestMapping("/api/user/agents")
 public class UserAgentController {
 
     @Autowired
