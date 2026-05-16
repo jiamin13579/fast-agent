@@ -14,3 +14,5 @@
 ## 用户偏好
 
 - Structured fields for model configuration.
+- 实施执行方式：Subagent-Driven（每个任务派发独立子 agent，任务间 review）
+- 开发流程：TDD 测试用例先行

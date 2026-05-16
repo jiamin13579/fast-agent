@@ -85,7 +85,9 @@
       "Bash(lsof -ti:8080)",
       "Bash(xargs kill *)",
       "Bash(xargs -I{} grep -l \"\\\\.\" {})",
-      "Bash(mvn test *)"
+      "Bash(mvn test *)",
+      "Bash(xargs perl *)",
+      "Bash(grep *)"
     ]
   }
 }

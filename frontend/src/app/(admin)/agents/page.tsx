@@ -1,2 +1,2 @@
-import { AgentList } from "@/components/admin/AgentList";
+import { AgentList } from "@/components/admin/agents/AgentList";
 export default function AgentsPage() { return <AgentList />; }

@@ -1,2 +1,2 @@
-import { ModelList } from "@/components/admin/ModelList";
+import { ModelList } from "@/components/admin/models/ModelList";
 export default function ModelsPage() { return <ModelList />; }
