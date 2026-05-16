@@ -1,0 +1,45 @@
+{
+  "name": "user-frontend",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "lint": "next lint",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test:api": "vitest run tests/api/agent-platform.test.ts"
+  },
+  "dependencies": {
+    "@base-ui/react": "^1.4.1",
+    "autoprefixer": "^10.5.0",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "lucide-react": "^1.14.0",
+    "next": "^14.2.35",
+    "postcss": "^8.5.14",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "socket.io-client": "^4.8.3",
+    "sonner": "^2.0.7",
+    "tailwind-merge": "^3.6.0",
+    "tailwindcss": "^3.4.19"
+  },
+  "devDependencies": {
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "@testing-library/user-event": "^14.6.1",
+    "@types/node": "^25.6.2",
+    "@types/react": "19.2.14",
+    "@vitest/ui": "^4.1.6",
+    "eslint": "^8.57.1",
+    "eslint-config-next": "^14.2.35",
+    "jsdom": "^29.1.1",
+    "msw": "^2.14.6",
+    "playwright": "^1.60.0",
+    "prettier": "^3.6.2",
+    "typescript": "6.0.3",
+    "vitest": "^4.1.6"
+  }
+}

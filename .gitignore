@@ -7,6 +7,12 @@ frontend/.next/
 frontend/out/
 frontend/build/
 
+admin-frontend/node_modules/
+admin-frontend/.next/
+
+user-frontend/node_modules/
+user-frontend/.next/
+
 # IDE
 .idea/
 .vscode/
