@@ -2,57 +2,45 @@
 
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
-import { api } from "@/lib/api";
+import { useAuth } from "@/lib/hooks/use-auth";
+import { useNamespace } from "@/lib/hooks/use-namespace";
+import * as agentsApi from "@/lib/api/admin-agents";
+import * as namespacesApi from "@/lib/api/admin-namespaces";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import {
-  Table,
-  TableHeader,
-  TableBody,
-  TableRow,
-  TableHead,
-  TableCell,
-} from "@/components/ui/table";
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AgentForm } from "./AgentForm";
 import { ResourceBindingDialog } from "./ResourceBindingDialog";
-
-interface Agent {
-  id: number;
-  namespace_id: number;
-  name: string;
-  description: string;
-  system_prompt: string;
-  status: number;
-}
-
-interface Namespace {
-  id: number;
-  code: string;
-  name: string;
-}
+import type { Agent, Namespace } from "@/types/admin";
 
 export function AgentList() {
+  const { isAdmin } = useAuth();
+  const { currentNamespaceId, isCurrentNsAdmin } = useNamespace();
   const [agents, setAgents] = useState<Agent[]>([]);
   const [namespaces, setNamespaces] = useState<Namespace[]>([]);
   const [loading, setLoading] = useState(true);
   const [formOpen, setFormOpen] = useState(false);
   const [editingAgent, setEditingAgent] = useState<Agent | null>(null);
   const [bindingAgent, setBindingAgent] = useState<Agent | null>(null);
+  const [filterNamespace, setFilterNamespace] = useState<string>(isCurrentNsAdmin ? String(currentNamespaceId) : "all");
 
-  const fetchAgents = async () => {
+  const fetchAgents = async (nsFilter?: string) => {
     try {
-      const data = await api.get<Agent[]>('/api/admin/agents');
+      const nsId = isCurrentNsAdmin ? currentNamespaceId : (nsFilter && nsFilter !== "all" ? Number(nsFilter) : undefined);
+      const data = await agentsApi.listAgents(nsId);
       setAgents(data);
-    } catch {
-      toast.error("获取 Agent 列表失败");
+    } catch (e: any) {
+      toast.error(e.message || "获取 Agent 列表失败");
     } finally {
       setLoading(false);
     }
   };
 
   const fetchNamespaces = async () => {
+    if (!isAdmin) return;
     try {
-      const data = await api.get<Namespace[]>('/api/admin/namespaces');
+      const data = await namespacesApi.listNamespaces();
       setNamespaces(data);
     } catch {
       toast.error("获取 Namespace 列表失败");
@@ -61,27 +49,17 @@ export function AgentList() {
 
   useEffect(() => {
     Promise.all([fetchAgents(), fetchNamespaces()]);
-  }, []);
+  }, [currentNamespaceId]);
 
   const handleDelete = async (id: number) => {
     if (!confirm("确定要删除吗？")) return;
     try {
-      await api.delete(`/admin/agents/${id}`);
+      await agentsApi.deleteAgent(id);
       toast.success("删除成功");
-      fetchAgents();
-    } catch {
-      toast.error("删除失败");
+      fetchAgents(filterNamespace);
+    } catch (e: any) {
+      toast.error(e.message);
     }
-  };
-
-  const handleEdit = (agent: Agent) => {
-    setEditingAgent(agent);
-    setFormOpen(true);
-  };
-
-  const handleClose = () => {
-    setFormOpen(false);
-    setEditingAgent(null);
   };
 
   const getNamespaceName = (nsId: number) => {
@@ -94,14 +72,23 @@ export function AgentList() {
     <div className="space-y-4">
       <div className="flex justify-between items-center">
         <h1 className="text-xl font-semibold">Agent 管理</h1>
-        <Button
-          onClick={() => {
-            setEditingAgent(null);
-            setFormOpen(true);
-          }}
-        >
-          新建
-        </Button>
+        <div className="flex gap-4">
+          {isAdmin && !isCurrentNsAdmin && (
+            <Select value={filterNamespace} onValueChange={(v) => { if (!v) return; setFilterNamespace(v); fetchAgents(v); }}>
+              <SelectTrigger className="w-48">
+                <SelectValue placeholder="筛选 Namespace" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">全部</SelectItem>
+                <SelectItem value="0">全局</SelectItem>
+                {namespaces.map((ns) => (
+                  <SelectItem key={ns.id} value={String(ns.id)}>{ns.name} ({ns.code})</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+          <Button onClick={() => { setEditingAgent(null); setFormOpen(true); }}>新建</Button>
+        </div>
       </div>
 
       {loading ? (
@@ -122,7 +109,7 @@ export function AgentList() {
             {agents.map((agent) => (
               <TableRow key={agent.id}>
                 <TableCell>{agent.id}</TableCell>
-                <TableCell>{getNamespaceName(agent.namespace_id)}</TableCell>
+                <TableCell>{getNamespaceName(agent.namespaceId)}</TableCell>
                 <TableCell>{agent.name}</TableCell>
                 <TableCell>{agent.description}</TableCell>
                 <TableCell>
@@ -132,15 +119,9 @@ export function AgentList() {
                 </TableCell>
                 <TableCell>
                   <div className="flex gap-2">
-                    <Button size="sm" variant="outline" onClick={() => handleEdit(agent)}>
-                      Edit
-                    </Button>
-                    <Button size="sm" variant="outline" onClick={() => setBindingAgent(agent)}>
-                      绑定资源
-                    </Button>
-                    <Button size="sm" variant="destructive" onClick={() => handleDelete(agent.id)}>
-                      Delete
-                    </Button>
+                    <Button size="sm" variant="outline" onClick={() => { setEditingAgent(agent); setFormOpen(true); }}>Edit</Button>
+                    <Button size="sm" variant="outline" onClick={() => setBindingAgent(agent)}>绑定资源</Button>
+                    <Button size="sm" variant="destructive" onClick={() => handleDelete(agent.id)}>Delete</Button>
                   </div>
                 </TableCell>
               </TableRow>
@@ -151,8 +132,8 @@ export function AgentList() {
 
       <AgentForm
         open={formOpen}
-        onClose={handleClose}
-        onSuccess={fetchAgents}
+        onClose={() => { setFormOpen(false); setEditingAgent(null); }}
+        onSuccess={() => fetchAgents(filterNamespace)}
         editingAgent={editingAgent}
         namespaces={namespaces}
       />

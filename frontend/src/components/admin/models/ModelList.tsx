@@ -2,65 +2,43 @@
 
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
-import { api } from "@/lib/api";
+import { useAuth } from "@/lib/hooks/use-auth";
+import { useNamespace } from "@/lib/hooks/use-namespace";
+import * as modelsApi from "@/lib/api/admin-models";
+import * as namespacesApi from "@/lib/api/admin-namespaces";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import {
-  Table,
-  TableHeader,
-  TableBody,
-  TableRow,
-  TableHead,
-  TableCell,
-} from "@/components/ui/table";
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ModelForm } from "./ModelForm";
-
-interface Model {
-  id: number;
-  namespace_id: number;
-  name: string;
-  provider: string;
-  model_name: string;
-  api_key: string;
-  base_url: string;
-  max_tokens: number;
-  temperature: number;
-  status: number;
-}
-
-interface Namespace {
-  id: number;
-  code: string;
-  name: string;
-}
+import type { LlmModel as Model, Namespace } from "@/types/admin";
 
 export function ModelList() {
+  const { isAdmin } = useAuth();
+  const { currentNamespaceId, isCurrentNsAdmin } = useNamespace();
   const [models, setModels] = useState<Model[]>([]);
   const [namespaces, setNamespaces] = useState<Namespace[]>([]);
   const [loading, setLoading] = useState(true);
   const [formOpen, setFormOpen] = useState(false);
   const [editingModel, setEditingModel] = useState<Model | null>(null);
-  const [filterNamespace, setFilterNamespace] = useState<string>("all");
+  const [filterNamespace, setFilterNamespace] = useState<string>(isCurrentNsAdmin ? String(currentNamespaceId) : "all");
 
-  const fetchModels = async (namespaceId?: string) => {
+  const fetchModels = async (nsFilter?: string) => {
     try {
-      let url = '/api/admin/models';
-      if (namespaceId && namespaceId !== "all") {
-        url += `?namespace_id=${namespaceId}`;
-      }
-      const data = await api.get<Model[]>(url);
+      const nsId = isCurrentNsAdmin ? currentNamespaceId : (nsFilter && nsFilter !== "all" ? Number(nsFilter) : undefined);
+      const data = await modelsApi.listModels(nsId);
       setModels(data);
-    } catch {
-      toast.error("获取模型列表失败");
+    } catch (e: any) {
+      toast.error(e.message || "获取模型列表失败");
     } finally {
       setLoading(false);
     }
   };
 
   const fetchNamespaces = async () => {
+    if (!isAdmin) return;
     try {
-      const data = await api.get<Namespace[]>('/api/admin/namespaces');
+      const data = await namespacesApi.listNamespaces();
       setNamespaces(data);
     } catch {
       toast.error("获取 Namespace 列表失败");
@@ -69,33 +47,17 @@ export function ModelList() {
 
   useEffect(() => {
     Promise.all([fetchModels(), fetchNamespaces()]);
-  }, []);
-
-  const handleFilterChange = (value: string | null) => {
-    if (!value) return;
-    setFilterNamespace(value);
-    fetchModels(value);
-  };
+  }, [currentNamespaceId]);
 
   const handleDelete = async (id: number) => {
     if (!confirm("确定要删除吗？")) return;
     try {
-      await api.delete(`/admin/models/${id}`);
+      await modelsApi.deleteModel(id);
       toast.success("删除成功");
-      fetchModels(filterNamespace === "all" ? undefined : filterNamespace);
-    } catch {
-      toast.error("删除失败");
+      fetchModels(filterNamespace);
+    } catch (e: any) {
+      toast.error(e.message);
     }
-  };
-
-  const handleEdit = (model: Model) => {
-    setEditingModel(model);
-    setFormOpen(true);
-  };
-
-  const handleClose = () => {
-    setFormOpen(false);
-    setEditingModel(null);
   };
 
   const getNamespaceName = (nsId: number) => {
@@ -109,28 +71,21 @@ export function ModelList() {
       <div className="flex justify-between items-center">
         <h1 className="text-xl font-semibold">模型管理</h1>
         <div className="flex gap-4">
-          <Select value={filterNamespace} onValueChange={handleFilterChange}>
-            <SelectTrigger className="w-48">
-              <SelectValue placeholder="筛选 Namespace" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">全部</SelectItem>
-              <SelectItem value="0">全局</SelectItem>
-              {namespaces.map((ns) => (
-                <SelectItem key={ns.id} value={String(ns.id)}>
-                  {ns.name} ({ns.code})
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Button
-            onClick={() => {
-              setEditingModel(null);
-              setFormOpen(true);
-            }}
-          >
-            新建
-          </Button>
+          {isAdmin && !isCurrentNsAdmin && (
+            <Select value={filterNamespace} onValueChange={(v) => { if (!v) return; setFilterNamespace(v); fetchModels(v); }}>
+              <SelectTrigger className="w-48">
+                <SelectValue placeholder="筛选 Namespace" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">全部</SelectItem>
+                <SelectItem value="0">全局</SelectItem>
+                {namespaces.map((ns) => (
+                  <SelectItem key={ns.id} value={String(ns.id)}>{ns.name} ({ns.code})</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+          <Button onClick={() => { setEditingModel(null); setFormOpen(true); }}>新建</Button>
         </div>
       </div>
 
@@ -153,10 +108,10 @@ export function ModelList() {
             {models.map((model) => (
               <TableRow key={model.id}>
                 <TableCell>{model.id}</TableCell>
-                <TableCell>{getNamespaceName(model.namespace_id)}</TableCell>
+                <TableCell>{getNamespaceName(model.namespaceId)}</TableCell>
                 <TableCell>{model.name}</TableCell>
                 <TableCell>{model.provider}</TableCell>
-                <TableCell>{model.model_name}</TableCell>
+                <TableCell>{model.modelName}</TableCell>
                 <TableCell>
                   <Badge variant={model.status === 1 ? "default" : "secondary"}>
                     {model.status === 1 ? "active" : "inactive"}
@@ -164,12 +119,8 @@ export function ModelList() {
                 </TableCell>
                 <TableCell>
                   <div className="flex gap-2">
-                    <Button size="sm" variant="outline" onClick={() => handleEdit(model)}>
-                      Edit
-                    </Button>
-                    <Button size="sm" variant="destructive" onClick={() => handleDelete(model.id)}>
-                      Delete
-                    </Button>
+                    <Button size="sm" variant="outline" onClick={() => { setEditingModel(model); setFormOpen(true); }}>Edit</Button>
+                    <Button size="sm" variant="destructive" onClick={() => handleDelete(model.id)}>Delete</Button>
                   </div>
                 </TableCell>
               </TableRow>
@@ -180,8 +131,8 @@ export function ModelList() {
 
       <ModelForm
         open={formOpen}
-        onClose={handleClose}
-        onSuccess={() => fetchModels(filterNamespace === "all" ? undefined : filterNamespace)}
+        onClose={() => { setFormOpen(false); setEditingModel(null); }}
+        onSuccess={() => fetchModels(filterNamespace)}
         editingModel={editingModel}
         namespaces={namespaces}
       />

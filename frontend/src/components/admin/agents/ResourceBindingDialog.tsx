@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
-import { api } from "@/lib/api";
+import * as modelsApi from "@/lib/api/admin-models";
+import * as agentsApi from "@/lib/api/admin-agents";
 import {
   Dialog,
   DialogContent,
@@ -12,20 +13,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-
-interface Agent {
-  id: number;
-  namespace_id: number;
-  name: string;
-}
-
-interface Model {
-  id: number;
-  namespace_id: number;
-  name: string;
-  provider: string;
-  model_name: string;
-}
+import type { Agent, LlmModel } from "@/types/admin";
 
 interface BoundResource {
   id: number;
@@ -41,15 +29,15 @@ interface ResourceBindingDialogProps {
 }
 
 export function ResourceBindingDialog({ agent, open, onClose }: ResourceBindingDialogProps) {
-  const [models, setModels] = useState<Model[]>([]);
+  const [models, setModels] = useState<LlmModel[]>([]);
   const [boundResources, setBoundResources] = useState<BoundResource[]>([]);
   const [loading, setLoading] = useState(false);
   const [binding, setBinding] = useState(false);
 
   const fetchModels = async () => {
     try {
-      const nsId = agent.namespace_id || 0;
-      const data = await api.get<Model[]>(`/admin/models?namespace_id=${nsId}`);
+      const nsId = agent.namespaceId || 0;
+      const data = await modelsApi.listModels(nsId);
       setModels(data);
     } catch {
       toast.error("获取模型列表失败");
@@ -58,7 +46,7 @@ export function ResourceBindingDialog({ agent, open, onClose }: ResourceBindingD
 
   const fetchBoundResources = async () => {
     try {
-      const data = await api.get<BoundResource[]>(`/admin/agents/${agent.id}/resources`);
+      const data = await agentsApi.getAgentResources(agent.id);
       setBoundResources(data);
     } catch {
       toast.error("获取绑定资源失败");
@@ -75,7 +63,7 @@ export function ResourceBindingDialog({ agent, open, onClose }: ResourceBindingD
   const handleBind = async (resourceType: string, resourceId: number) => {
     setBinding(true);
     try {
-      await api.post(`/admin/agents/${agent.id}/resources`, { resource_type: resourceType, resource_id: resourceId });
+      await agentsApi.bindResource(agent.id, resourceType, resourceId);
       toast.success("绑定成功");
       fetchBoundResources();
     } catch (err: any) {
@@ -87,7 +75,7 @@ export function ResourceBindingDialog({ agent, open, onClose }: ResourceBindingD
 
   const handleUnbind = async (resourceId: number, resourceType: string) => {
     try {
-      await api.delete(`/admin/agents/${agent.id}/resources/${resourceId}?type=${resourceType}`);
+      await agentsApi.unbindResource(agent.id, resourceId, resourceType);
       toast.success("解绑成功");
       fetchBoundResources();
     } catch (err: any) {
@@ -128,7 +116,7 @@ export function ResourceBindingDialog({ agent, open, onClose }: ResourceBindingD
                         const model = models.find((m) => m.id === r.resource_id);
                         return (
                           <Badge key={r.id} variant="default" className="gap-2">
-                            {model ? `${model.name} (${model.model_name})` : `ID: ${r.resource_id}`}
+                            {model ? `${model.name} (${model.modelName})` : `ID: ${r.resource_id}`}
                             <button
                               onClick={() => handleUnbind(r.resource_id, "MODEL")}
                               className="hover:text-destructive"
@@ -153,7 +141,7 @@ export function ResourceBindingDialog({ agent, open, onClose }: ResourceBindingD
                         <div>
                           <p className="text-sm font-medium">{model.name}</p>
                           <p className="text-xs text-muted-foreground">
-                            {model.provider} - {model.model_name}
+                            {model.provider} - {model.modelName}
                           </p>
                         </div>
                         {isBound(model.id) ? (

@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
-import { api } from "@/lib/api";
+import * as modelsApi from "@/lib/api/admin-models";
 import {
   Dialog,
   DialogContent,
@@ -13,46 +13,27 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-
-interface Model {
-  id: number;
-  namespace_id: number;
-  name: string;
-  provider: string;
-  model_name: string;
-  api_key: string;
-  base_url: string;
-  max_tokens: number;
-  temperature: number;
-  status: number;
-}
-
-interface Namespace {
-  id: number;
-  code: string;
-  name: string;
-}
+import type { LlmModel, Namespace } from "@/types/admin";
 
 interface ModelFormProps {
   open: boolean;
   onClose: () => void;
   onSuccess: () => void;
-  editingModel?: Model | null;
+  editingModel?: LlmModel | null;
   namespaces: Namespace[];
 }
 
 export function ModelForm({ open, onClose, onSuccess, editingModel, namespaces }: ModelFormProps) {
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({
-    namespace_id: editingModel?.namespace_id || 0,
+    namespaceId: editingModel?.namespaceId || 0,
     name: editingModel?.name || "",
     provider: editingModel?.provider || "",
-    model_name: editingModel?.model_name || "",
-    api_key: editingModel?.api_key || "",
-    base_url: editingModel?.base_url || "",
-    max_tokens: editingModel?.max_tokens || 4096,
+    modelName: editingModel?.modelName || "",
+    apiKey: editingModel?.apiKey || "",
+    baseUrl: editingModel?.baseUrl || "",
+    maxTokens: editingModel?.maxTokens || 4096,
     temperature: editingModel?.temperature || 0.7,
   });
 
@@ -61,12 +42,11 @@ export function ModelForm({ open, onClose, onSuccess, editingModel, namespaces }
     setLoading(true);
 
     try {
-      const url = editingModel
-        ? `/admin/models/${editingModel.id}`
-        : `/admin/models`;
-      const method = editingModel ? "PUT" : "POST";
-
-      await api[method === "PUT" ? "put" : "post"](url, form);
+      if (editingModel) {
+        await modelsApi.updateModel(editingModel.id, form);
+      } else {
+        await modelsApi.createModel(form);
+      }
       toast.success(editingModel ? "更新成功" : "创建成功");
       onSuccess();
       onClose();
@@ -85,10 +65,10 @@ export function ModelForm({ open, onClose, onSuccess, editingModel, namespaces }
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="namespace_id">Namespace</Label>
+            <Label htmlFor="namespaceId">Namespace</Label>
             <Select
-              value={String(form.namespace_id)}
-              onValueChange={(val) => setForm({ ...form, namespace_id: Number(val) })}
+              value={String(form.namespaceId)}
+              onValueChange={(val) => setForm({ ...form, namespaceId: Number(val) })}
             >
               <SelectTrigger>
                 <SelectValue placeholder="选择 Namespace" />
@@ -122,39 +102,39 @@ export function ModelForm({ open, onClose, onSuccess, editingModel, namespaces }
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="model_name">Model Name</Label>
+            <Label htmlFor="modelName">Model Name</Label>
             <Input
-              id="model_name"
-              value={form.model_name}
-              onChange={(e) => setForm({ ...form, model_name: e.target.value })}
+              id="modelName"
+              value={form.modelName}
+              onChange={(e) => setForm({ ...form, modelName: e.target.value })}
               required
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="api_key">API Key</Label>
+            <Label htmlFor="apiKey">API Key</Label>
             <Input
-              id="api_key"
+              id="apiKey"
               type="password"
-              value={form.api_key}
-              onChange={(e) => setForm({ ...form, api_key: e.target.value })}
+              value={form.apiKey}
+              onChange={(e) => setForm({ ...form, apiKey: e.target.value })}
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="base_url">Base URL</Label>
+            <Label htmlFor="baseUrl">Base URL</Label>
             <Input
-              id="base_url"
-              value={form.base_url}
-              onChange={(e) => setForm({ ...form, base_url: e.target.value })}
+              id="baseUrl"
+              value={form.baseUrl}
+              onChange={(e) => setForm({ ...form, baseUrl: e.target.value })}
             />
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="max_tokens">Max Tokens</Label>
+              <Label htmlFor="maxTokens">Max Tokens</Label>
               <Input
-                id="max_tokens"
+                id="maxTokens"
                 type="number"
-                value={form.max_tokens}
-                onChange={(e) => setForm({ ...form, max_tokens: Number(e.target.value) })}
+                value={form.maxTokens}
+                onChange={(e) => setForm({ ...form, maxTokens: Number(e.target.value) })}
               />
             </div>
             <div className="space-y-2">

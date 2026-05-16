@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { toast } from "sonner";
-import { api } from "@/lib/api";
+import { api } from "@/lib/api/client";
+import * as agentsApi from "@/lib/api/admin-agents";
 import {
   Dialog,
   DialogContent,
@@ -15,21 +16,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-
-interface Agent {
-  id: number;
-  namespace_id: number;
-  name: string;
-  description: string;
-  system_prompt: string;
-  status: number;
-}
-
-interface Namespace {
-  id: number;
-  code: string;
-  name: string;
-}
+import type { Agent, Namespace } from "@/types/admin";
 
 interface AgentFormProps {
   open: boolean;
@@ -42,10 +29,10 @@ interface AgentFormProps {
 export function AgentForm({ open, onClose, onSuccess, editingAgent, namespaces }: AgentFormProps) {
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({
-    namespace_id: editingAgent?.namespace_id || 0,
+    namespaceId: editingAgent?.namespaceId || 0,
     name: editingAgent?.name || "",
     description: editingAgent?.description || "",
-    system_prompt: editingAgent?.system_prompt || "",
+    systemPrompt: editingAgent?.systemPrompt || "",
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -53,12 +40,11 @@ export function AgentForm({ open, onClose, onSuccess, editingAgent, namespaces }
     setLoading(true);
 
     try {
-      const url = editingAgent
-        ? `/admin/agents/${editingAgent.id}`
-        : `/admin/agents`;
-      const method = editingAgent ? "PUT" : "POST";
-
-      await api[method === "PUT" ? "put" : "post"](url, form);
+      if (editingAgent) {
+        await agentsApi.updateAgent(editingAgent.id, form);
+      } else {
+        await agentsApi.createAgent(form);
+      }
       toast.success(editingAgent ? "更新成功" : "创建成功");
       onSuccess();
       onClose();
@@ -77,10 +63,10 @@ export function AgentForm({ open, onClose, onSuccess, editingAgent, namespaces }
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="namespace_id">Namespace</Label>
+            <Label htmlFor="namespaceId">Namespace</Label>
             <Select
-              value={String(form.namespace_id)}
-              onValueChange={(val) => setForm({ ...form, namespace_id: Number(val) })}
+              value={String(form.namespaceId)}
+              onValueChange={(val) => setForm({ ...form, namespaceId: Number(val) })}
             >
               <SelectTrigger>
                 <SelectValue placeholder="选择 Namespace" />
@@ -113,11 +99,11 @@ export function AgentForm({ open, onClose, onSuccess, editingAgent, namespaces }
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="system_prompt">System Prompt</Label>
+            <Label htmlFor="systemPrompt">System Prompt</Label>
             <Textarea
-              id="system_prompt"
-              value={form.system_prompt}
-              onChange={(e) => setForm({ ...form, system_prompt: e.target.value })}
+              id="systemPrompt"
+              value={form.systemPrompt}
+              onChange={(e) => setForm({ ...form, systemPrompt: e.target.value })}
               rows={4}
             />
           </div>

@@ -29,3 +29,7 @@ export async function bindResource(agentId: number, resourceType: string, resour
 export async function unbindResource(agentId: number, resourceId: number, type: string): Promise<void> {
   await api.delete(`/admin/agents/${agentId}/resources/${resourceId}?type=${type}`);
 }
+
+export async function getAgentResources(agentId: number): Promise<{ id: number; resource_type: string; resource_id: number; resource_name?: string }[]> {
+  return api.get(`/admin/agents/${agentId}/resources`);
+}
